@@ -1,0 +1,10 @@
+Library
+  structure FOmegaS
+  functor PrintFun
+is
+  ../../cmlib/cmlib.cm
+  sources.cm
+  ../util/sources.cm
+
+  FOMEGAS.sml
+  FOmegaS.sml

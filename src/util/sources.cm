@@ -1,0 +1,17 @@
+Library
+  signature VARIABLE
+  structure Variable
+  structure ParList
+  functor HeadPrinterFun
+  signature EXTERNALPRINTER
+is
+  ../../cmlib/cmlib.cm
+
+  VARIABLE.sml
+  RefVariable.sml
+  Variable.sml
+
+  ParList.sml
+
+  EXTERNALPRINTER.sml
+  HeadPrinterFun.sml
