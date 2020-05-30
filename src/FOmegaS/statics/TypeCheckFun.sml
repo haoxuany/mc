@@ -39,8 +39,10 @@ functor TypeCheckFun(
   fun typeSynth ctx term =
     case term of
       Term_var v => lookupType ctx v
-    | Term_let (v, e, e') =>
+    | Term_let (e, v, e') =>
         typeSynth (extendType ctx v (typeSynth ctx e)) e'
+    | Term_fix (v, t, e) =>
+        (typeCheck (extendType ctx v t) e t; t)
     | Term_lam (v, t, e) =>
         (kindCheck ctx t Kind_type;
         Type_arrow (t, typeSynth (extendType ctx v t) e))
@@ -63,7 +65,7 @@ functor TypeCheckFun(
              (kindCheck ctx c k; typeCheck ctx e (substConInCon 0 [c] 0 c');
              cexists)
         | _ => raise TypeError)
-    | Term_unpack (v, e, e') =>
+    | Term_unpack (e, v, e') =>
         (case weakHeadNormalize ctx (typeSynth ctx e) of
            Type_exists (k, c) => let
              val tresult = typeSynth (extendType (extendKind ctx k) v c) e'

@@ -31,13 +31,14 @@ functor AbtFun(
 
   and term =
     Term_var of var
-  | Term_let of var * term * term
+  | Term_let of term * var * term
+  | Term_fix of var * con * term
   | Term_lam of var * con * term
   | Term_app of term * term
   | Term_polylam of kind * term
   | Term_polyapp of term * con
   | Term_pack of con * term * con
-  | Term_unpack of var * term * term
+  | Term_unpack of term * var * term
   | Term_tuple of term list
   | Term_proj of term * int
   | Term_inj of con * int * term

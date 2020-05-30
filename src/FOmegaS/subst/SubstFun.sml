@@ -8,21 +8,33 @@ functor SubstFun(
   val $ = fn (a, b) => a b
   infixr 4 $
 
-  val (==) = Variable.eq
-  infixr 1 ==
+  structure Dict = SplayRDict(
+    structure Key = Abt.Variable
+  )
 
   (* easy case: direct variable map substitution *)
-  (* we assume globally unique variables through Variable,
-  * to cut down cases of capture (which is computationally heavy) *)
-  fun substTerm (terma : term) x termb = let
-    val subst = substTerm terma x
+  fun substTerm dict termb = let
+    val subst = substTerm dict
+    fun alphaNew x = let
+      val y = Variable.new ()
+      val subst = substTerm (Dict.insert dict x (Term_var y))
+    in (y, subst) end
+
     val termb =
       case termb of
-        Term_var v => if v == x then terma else termb
-      | Term_let (x, a, b) =>
-          Term_let (x, subst a, subst b)
-      | Term_lam (x, c, rest) =>
-          Term_lam (x, c, subst rest)
+        Term_var v =>
+          (case Dict.find dict v of
+             NONE => termb
+           | SOME e => e)
+      | Term_let (a, x, b) => let
+          val (y, substx) = alphaNew x
+        in Term_let (subst a, y, substx b) end
+      | Term_fix (x, c, rest) => let
+          val (y, subst) = alphaNew x
+        in Term_fix (y, c, subst rest) end
+      | Term_lam (x, c, rest) => let
+          val (y, subst) = alphaNew x
+        in Term_lam (y, c, subst rest) end
       | Term_app (a, b) =>
           Term_app (subst a, subst b)
       | Term_polylam (k, a) =>
@@ -31,8 +43,9 @@ functor SubstFun(
           Term_polyapp (subst a, c)
       | Term_pack (c, a, c') =>
           Term_pack (c, subst a, c')
-      | Term_unpack (x, a, b) =>
-          Term_unpack (x, subst a, subst b)
+      | Term_unpack (a, x, b) => let
+          val (y, substx) = alphaNew x
+        in Term_unpack (subst a, y, substx b) end
       | Term_tuple terms =>
           Term_tuple (ParList.map subst terms)
       | Term_proj (a, i) =>
@@ -40,8 +53,16 @@ functor SubstFun(
       | Term_inj (c, i, a) =>
           Term_inj (c, i, subst a)
       | Term_case (a, cases) =>
-          Term_case (subst a, ParList.map (fn (i, a) => (i, subst a)) cases)
+          Term_case (subst a,
+          ParList.map
+          (fn (x, a) => let
+            val (y, subst) = alphaNew x
+          in (y, subst a) end)
+          cases)
   in termb end
+
+  val substTerm = fn e => fn i => fn e' =>
+    substTerm (Dict.singleton i e) e'
 
   (* hard case: DeBruijn Explicit substitutions of second order (con + kind) *)
 
@@ -116,8 +137,11 @@ functor SubstFun(
 
     val term = case t of
         Term_var v => t
-      | Term_let (v, t, t') =>
-          Term_let (v, substTerm t, substTerm t')
+      | Term_let (t, v, t') =>
+          Term_let (substTerm t, v, substTerm t')
+      | Term_fix (v, c, t) =>
+          (* only variable binder here, no debruijn binder *)
+          Term_fix (v, substCon c, substTerm t)
       | Term_lam (v, c, t) =>
           (* only variable binder here, no debruijn binder *)
           Term_lam (v, substCon c, substTerm t)
@@ -130,9 +154,9 @@ functor SubstFun(
           Term_polyapp (substTerm t, substCon c)
       | Term_pack (c, t, c') =>
           Term_pack (substCon c, substTerm t, substCon c')
-      | Term_unpack (v, t, t') =>
+      | Term_unpack (t, v, t') =>
           (* t' is under a debruijn binder from tycon binding *)
-          Term_unpack (v, substTerm t, substTermB t')
+          Term_unpack (substTerm t, v, substTermB t')
       | Term_tuple terms =>
           Term_tuple $ ParList.map substTerm terms
       | Term_proj (t, i) =>

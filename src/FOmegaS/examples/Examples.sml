@@ -55,13 +55,14 @@ structure Examples = struct
     val x = newvar ()
     val y = newvar ()
   in
-    Term_let (y,
+    Term_let (
       Term_polylam (
         Kind_type,
         Term_lam (x,
           Type_arrow (Con_var 0, Con_var 0),
           Term_var x)
         ),
+    y,
     Term_polyapp (Term_var y, Type_exn))
   end
   val () = printExample
@@ -112,7 +113,8 @@ structure Examples = struct
   val example_istrueunpack = let
     val x = newvar ()
   in
-    Term_unpack (x, example_istruepack,
+    Term_unpack (example_istruepack,
+      x,
       Term_app
         (Term_proj (Term_var x, 1),
         Term_proj (Term_var x, 0)))
@@ -120,4 +122,23 @@ structure Examples = struct
   val () = printExample
     "using boolean istrue function package"
     example_istrueunpack
+
+  val example_fixpoint = let
+    val x = newvar ()
+    val y = newvar ()
+    val a = newvar ()
+    val b = newvar ()
+    val temp = newvar ()
+  in
+    Term_let (
+    Term_fix (x, Type_arrow (bool, bool),
+      Term_lam (y, bool,
+        Term_case (Term_var y, [(a, tt), (b, Term_app (Term_var x, tt))]))),
+    temp,
+    Term_app (Term_var temp, ff)
+    )
+  end
+  val () = printExample
+    "Always true fixpoint"
+    example_fixpoint
 end

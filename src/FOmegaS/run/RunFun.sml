@@ -18,9 +18,10 @@ functor RunFun(
   fun step (fullterm as term) = let
     val term = case term of
       Term_var _ => raise TermVal
-    | Term_let (var, term, term') =>
-        ((Term_let (var, step term, term'))
+    | Term_let (term, var, term') =>
+        ((Term_let (step term, var, term'))
         handle TermVal => substTerm term var term')
+    | Term_fix (var, _, term) => substTerm fullterm var term
     | Term_lam _ => raise TermVal
     | Term_app (term, term') =>
         ((Term_app ((step term, term')))
@@ -43,8 +44,8 @@ functor RunFun(
                substConInTerm 0 [con] 0 t
            | _ => raise Stuck fullterm))
     | Term_pack (c, t, c') => Term_pack (c, step t, c')
-    | Term_unpack (v, t, t') =>
-        ((Term_unpack (v, step t, t'))
+    | Term_unpack (t, v, t') =>
+        ((Term_unpack (step t, v, t'))
           handle TermVal =>
           (* inversion tell us this should be a pack *)
           (case t of

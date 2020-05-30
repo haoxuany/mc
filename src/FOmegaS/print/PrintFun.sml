@@ -37,15 +37,17 @@ functor PrintFun(
   and st term =
     case term of
       Term_var i => raw (vp i)
-    | Term_let (i, t, t') =>
-        head "let" [raw (vp i), st t, st t']
+    | Term_let (t, x, t') =>
+        head "let" [st t, raw (vp x), st t']
+    | Term_fix (i, c, t) =>
+        head "fix" [raw (vp i), sc c, st t]
     | Term_lam (i, c, t) =>
         head "fn" [raw (vp i), sc c, st t]
     | Term_app (t, t') => head "app" [st t, st t]
     | Term_polylam (k, t) => head "tfn" [sk k, st t]
     | Term_polyapp (t, c) => head "tapp" [st t, sc c]
     | Term_pack (c, t, c') => head "pack" [sc c, st t, sc c']
-    | Term_unpack (x, t, t') => head "unpack" [raw (vp x), st t, st t']
+    | Term_unpack (t, x, t') => head "unpack" [st t, raw (vp x), st t']
     | Term_tuple terms => head "tuple" (ParList.map st terms)
     | Term_proj (t, i) => head "proj" [st t, int i]
     | Term_inj (c, i, t) => head "inj" [sc c, int i, st t]
