@@ -48,6 +48,7 @@ functor EquivFun(
           substConInKind 0 [] 1
           (singleton (Con_proj2 c) (substConInKind 0 [Con_proj1 c] 0 k2))
         )
+    | Kind_unit => k
 
   (* Kind validity: Figure 4.2 *)
   (* ctx |> k *)
@@ -59,6 +60,7 @@ functor EquivFun(
         (kindValid ctx k'; kindValid (extendKind ctx k') k'')
     | Kind_sigma (k', k'') =>
         (kindValid ctx k'; kindValid (extendKind ctx k') k'')
+    | Kind_unit => ()
 
   (* Subkinding: Figure 4.2 *)
   (* ctx |> k <= k' *)
@@ -75,6 +77,7 @@ functor EquivFun(
         subkind ctx k1 k2;
         subkind (extendKind ctx k1) l1 l2
       )
+    | (Kind_unit, Kind_unit) => ()
     | _ => raise TypeError
 
   (* Kind equivalence: Figure 4.2 *)
@@ -88,6 +91,7 @@ functor EquivFun(
         ( kindEquiv ctx k1 k2; kindEquiv (extendKind ctx k1) l1 l2 )
     | (Kind_sigma (k1, l1), Kind_sigma (k2, l2)) =>
         ( kindEquiv ctx k1 k2; kindEquiv (extendKind ctx k1) l1 l2 )
+    | (Kind_unit, Kind_unit) => ()
     | _ => raise TypeError
 
   (* Kind synthesis: Figure 4.3 *)
@@ -117,6 +121,7 @@ functor EquivFun(
         (case kindSynth ctx c of
            Kind_sigma (_, k'') => substConInKind 0 [Con_proj1 c] 0 k''
          | _ => raise TypeError)
+    | Con_unit => Kind_unit
    (* all the annoying base cases that just return the singleton of itself *)
    (* we also make an extra check for constructor validity, because the type
    * can be technically malformed *)
@@ -160,6 +165,7 @@ functor EquivFun(
            Kind_pi (_, k'') =>
              substConInKind 0 [c] 0 k''
         | _ => raise TypeError)
+    | Con_unit => Kind_unit
     (* constant constructor cases (aka types) *)
     | Type_arrow _ => Kind_type
     | Type_forall _ => Kind_type
@@ -203,6 +209,8 @@ functor EquivFun(
         end
       (* assume everything else are just types rather than constructors *)
       (* which are the constant cases of a path *)
+      (* also happens to align with empty con of empty kind, since it
+      * can't be normalized further *)
       | _ => c
 
     val c = reduce c
@@ -236,6 +244,7 @@ functor EquivFun(
           conEquiv ctx (Con_proj2 c) (Con_proj2 c')
           (substConInKind 0 [Con_proj1 c] 0 k'')
         )
+    | Kind_unit => ()
 
   (* Algorithmic path equivalence: Figure 4.4 *)
   (* ctx |> p <-> p ^ k *)
@@ -259,6 +268,9 @@ functor EquivFun(
         (case pathEquiv ctx p1 p2 of
            Kind_sigma (_, k'') => substConInKind 0 [Con_proj1 p1] 0 k''
         | _ => raise TypeError)
+    (* this should never get called: constructor equivalence will just work,
+    * nevertheless adding this anyway *)
+    | (Con_unit, Con_unit) => Kind_unit
     (* the rest are the annoying and unilluminating constant cases *)
     | (Type_arrow (c1, c2), Type_arrow (c3, c4)) =>
         (conEquiv ctx c1 c3 Kind_type; conEquiv ctx c2 c4 Kind_type;

@@ -18,6 +18,7 @@ functor PrintFun(
     | Kind_pi (a, b) => head "Pi" [sk a, sk b]
     | Kind_sigma (a, b) => head "Sigma" [sk a, sk b]
     | Kind_singleton c => head "S" [sc c]
+    | Kind_unit => head "1" nil
 
   and sc con =
    case con of
@@ -33,6 +34,7 @@ functor PrintFun(
    | Con_pair (c, c') => head "Pair" [sc c, sc c']
    | Con_proj1 c => head "Pi1" [sc c]
    | Con_proj2 c => head "Pi2" [sc c]
+   | Con_unit => head "<>" nil
 
   and st term =
     case term of

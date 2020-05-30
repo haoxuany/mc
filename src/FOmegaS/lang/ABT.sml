@@ -9,6 +9,7 @@ signature ABT = sig
   | Kind_pi of kind * kind
   | Kind_sigma of kind * kind
   | Kind_singleton of con
+  | Kind_unit
 
   and con =
     (* types *)
@@ -26,6 +27,7 @@ signature ABT = sig
   | Con_pair of con * con
   | Con_proj1 of con
   | Con_proj2 of con
+  | Con_unit
 
   and term =
     Term_var of var

@@ -110,6 +110,7 @@ functor SubstFun(
           Con_pair (substCon c, substCon c')
       | Con_proj1 c => Con_proj1 $ substCon c
       | Con_proj2 c => Con_proj2 $ substCon c
+      | Con_unit => Con_unit
   in con end
 
   and substConInKind shifts cons n lifts k = let
@@ -127,6 +128,7 @@ functor SubstFun(
           Kind_sigma (substKind k, substKindB k')
       | Kind_singleton c =>
           Kind_singleton $ substCon c
+      | Kind_unit => Kind_unit
   in kind end
 
   fun substConInTerm shifts cons n lifts t = let
