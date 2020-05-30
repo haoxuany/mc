@@ -77,6 +77,15 @@ functor RunFun(
             in substTerm term x rest end
           | _ => raise Stuck fullterm
         )
+    | Term_fold (con, term) => Term_fold (con, step term)
+    | Term_unfold term =>
+        ((Term_unfold (step term))
+        handle TermVal =>
+          (* inversion tells us this term should be a fold *)
+          case term of
+            Term_fold (_, term) => term
+          | _ => raise Stuck fullterm
+        )
   in term end
 
   fun run term = (run (step term)) handle TermVal => term

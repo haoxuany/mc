@@ -20,6 +20,7 @@ functor AbtFun(
   | Type_exists of kind * con
   | Type_product of con list
   | Type_sum of con list
+  | Type_rec of con
   | Type_exn
 
     (* type constructors *)
@@ -45,4 +46,6 @@ functor AbtFun(
   | Term_proj of term * int
   | Term_inj of con * int * term
   | Term_case of term * (var * term) list
+  | Term_fold of con * term
+  | Term_unfold of term
 end

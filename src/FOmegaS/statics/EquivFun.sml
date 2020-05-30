@@ -140,6 +140,9 @@ functor EquivFun(
    | Type_sum tys =>
        (ParList.map (fn c => kindCheck ctx c Kind_type) tys;
        Kind_singleton allc)
+   | Type_rec ty =>
+       (kindCheck (extendKind ctx Kind_type) ty;
+       Kind_singleton allc)
    | Type_exn => Kind_singleton allc
 
   (* Kind checking: Figure 4.3 *)
@@ -172,6 +175,7 @@ functor EquivFun(
     | Type_exists _ => Kind_type
     | Type_product _ => Kind_type
     | Type_sum _ => Kind_type
+    | Type_rec _ => Kind_type
     | Type_exn => Kind_type
 
     | Con_lam _ => raise NotAPath
@@ -292,6 +296,9 @@ functor EquivFun(
         (ListPair.appEq
         (fn (ty1, ty2) => conEquiv ctx ty1 ty2 Kind_type)
         (tys, tys');
+        Kind_type)
+    | (Type_rec ty, Type_rec ty') =>
+        (conEquiv (extendKind ctx Kind_type) ty ty' Kind_type;
         Kind_type)
     | (Type_exn, Type_exn) => Kind_type
     | _ => raise TypeError

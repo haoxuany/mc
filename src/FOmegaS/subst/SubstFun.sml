@@ -59,6 +59,8 @@ functor SubstFun(
             val (y, subst) = alphaNew x
           in (y, subst a) end)
           cases)
+      | Term_fold (c, a) => Term_fold (c, subst a)
+      | Term_unfold a => Term_unfold (subst a)
   in termb end
 
   val substTerm = fn e => fn i => fn e' =>
@@ -89,6 +91,9 @@ functor SubstFun(
           Type_product $ ParList.map substCon tys
       | Type_sum tys =>
           Type_sum $ ParList.map substCon tys
+      | Type_rec ty =>
+          (* ty is under a binder from rec *)
+          Type_rec $ substConB ty
       | Type_exn => Type_exn
       | Con_var (v as i) =>
           if i < shifts then c (* in the first range [id substs]*)
@@ -134,6 +139,7 @@ functor SubstFun(
   fun substConInTerm shifts cons n lifts t = let
     val substKind = substConInKind shifts cons n lifts
     val substCon = substConInCon shifts cons n lifts
+    val substConB = substConInCon (shifts + 1) cons n lifts
     val substTerm = substConInTerm shifts cons n lifts
     val substTermB = substConInTerm (shifts + 1) cons n lifts
 
@@ -168,6 +174,10 @@ functor SubstFun(
       | Term_case (t, cases) =>
           Term_case (substTerm t,
           ParList.map (fn (v, t) => (v, substTerm t)) cases)
+      | Term_fold (c, t) =>
+          (* c is under a binder *)
+          Term_fold (substConB c, substTerm t)
+      | Term_unfold t => Term_unfold (substTerm t)
   in term end
 
   val substConInCon = fn shifts => fn cons => fn lifts =>

@@ -111,6 +111,13 @@ functor TypeCheckFun(
              | SOME ty => ty
            end
         | _ => raise TypeError)
+  | Term_fold (c, e) => let
+      val ty = Type_rec c
+    in (typeCheck ctx e (substConInCon 0 [ty] 0 c); ty) end
+  | Term_unfold e =>
+      (case weakHeadNormalize ctx (typeSynth ctx e) of
+         (ty as (Type_rec c)) => substConInCon 0 [ty] 0 c
+       | _ => raise TypeError)
 
 
   (* ctx |> t <-- c *)

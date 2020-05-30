@@ -141,4 +141,18 @@ structure Examples = struct
   val () = printExample
     "Always true fixpoint"
     example_fixpoint
+
+  val unitlistb = Type_sum [Type_product [], Con_var 0]
+  val unitlist = Type_rec unitlistb
+
+  val example_list = let
+  in
+    Term_fold (unitlistb,
+      Term_inj (Type_sum [Type_product [], unitlist], 1,
+        Term_fold (unitlistb,
+          Term_inj (Type_sum [Type_product [], unitlist], 0, un))))
+  end
+  val () = printExample
+    "length 2 unit list"
+    example_list
 end

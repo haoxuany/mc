@@ -27,6 +27,7 @@ functor PrintFun(
    | Type_exists (k, c) => head "exists" [sk k, sc c]
    | Type_product cons => head "*" (ParList.map sc cons)
    | Type_sum cons => head "+" (ParList.map sc cons)
+   | Type_rec con => head "rec" [sc con]
    | Type_exn => head "exn" nil
    | Con_var i => int i
    | Con_lam (k, c) => head "Lam" [sk k, sc c]
@@ -56,6 +57,8 @@ functor PrintFun(
     | Term_case (t, cases) => let
         val cases = ParList.map (fn (x, t) => list [raw (vp x), st t]) cases
       in head "case" ((st t) :: cases) end
+    | Term_fold (c, t) => head "fold" [sc c, st t]
+    | Term_unfold t => head "unfold" [st t]
   in
 
   val serializeKind = sk
