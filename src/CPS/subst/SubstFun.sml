@@ -104,6 +104,9 @@ functor SubstFun(
           Value_tuple (ParList.map substValue vals)
       | Value_inj (c, i, v) =>
           Value_inj (substCon c, i, substValue v)
+      | Value_fold (c, v) =>
+          (* c is under a binder *)
+          Value_fold (substConB c, substValue v)
   in value end
 
   (* this function alpha varies variables, which is slower, in order
@@ -138,6 +141,9 @@ functor SubstFun(
           Value_tuple (ParList.map (substValue dict) vals)
       | Value_inj (c, i, v) =>
           Value_inj (substCon c, i, substValue dict v)
+      | Value_fold (c, v) =>
+          (* c is under a binder *)
+          Value_fold (substConB c, substValue dict v)
   in value end
 
   and substConInExp shifts cons n lifts exp = let
@@ -157,6 +163,8 @@ functor SubstFun(
       | Exp_case (v, cases) =>
           Exp_case (substValue v,
             ParList.map (fn (x, e) => (x, substExp e)) cases)
+      | Exp_unfold (v, x, e) =>
+          Exp_unfold (substValue v, x, substExp e)
   in exp end
 
   (* this function alpha varies variables, which is slower, in order
@@ -188,6 +196,9 @@ functor SubstFun(
               val (x, dict) = alphaNew x
             in (x, substExp dict e) end)
             cases)
+      | Exp_unfold (v, x, e) => let
+          val (x, dictA) = alphaNew x
+        in Exp_unfold (substValue dict v, x, substExp dictA e) end
   in exp end
 
   val substInCon = fn shifts => fn cons => fn lifts =>

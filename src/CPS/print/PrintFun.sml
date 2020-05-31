@@ -45,6 +45,8 @@ functor PrintFun(
         head "*" (ParList.map sv vals)
     | Value_inj (c, i, v) =>
         head "inj" [sc c, int i, sv v]
+    | Value_fold (c, v) =>
+        head "fold" [sc c, sv v]
 
   and se exp =
     case exp of
@@ -54,6 +56,8 @@ functor PrintFun(
     | Exp_case (v, exps) =>
         head "case" ((sv v) ::
           (ParList.map (fn (x, e) => list [raw (vp x), se e]) exps))
+    | Exp_unfold (v, x, e) =>
+        head "unfold" [sv v, raw (vp x), se e]
   in
 
   val serializeKind = sk

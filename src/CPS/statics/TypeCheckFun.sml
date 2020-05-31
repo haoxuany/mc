@@ -57,6 +57,9 @@ functor TypeCheckFun(
              c
            )
         | _ => raise TypeError)
+    | Value_fold (c, v) => let
+        val ty = Type_rec c
+      in (typeValueCheck ctx v (substInCon 0 [ty] 0 c); ty) end
 
   (* ctx |> v <-- c *)
   and typeValueCheck ctx value con =
@@ -80,4 +83,9 @@ functor TypeCheckFun(
              (fn (ty, (x, e)) => typeExpCheck (extendType ctx x ty) e)
              (tys, cases)
         | _ => raise TypeError)
+    | Exp_unfold (v, x, e) =>
+        (case weakHeadNormalize ctx (typeValueSynth ctx v) of
+           (ty as (Type_rec c)) =>
+             typeExpCheck (extendType ctx x (substInCon 0 [ty] 0 c)) e
+         | _ => raise TypeError)
 end

@@ -35,6 +35,12 @@ functor RunFun(
              val (x, e) = List.nth (cases, i)
            in substInExp 0 nil 0 (varSubst [(v, x)]) e end
          | _ => raise Stuck fullexp)
+    | Exp_unfold (v, x, e) =>
+        (case v of
+           (* by inversion, v should be a fold *)
+           Value_fold (_, v) =>
+             substInExp 0 nil 0 (varSubst [(v, x)]) e
+         | _ => raise Stuck fullexp)
   in exp end
 
   fun run exp = (run (step exp))
