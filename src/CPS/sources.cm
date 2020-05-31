@@ -1,0 +1,42 @@
+Library
+  signature ABT
+  functor AbtFun
+
+  signature CONTEXT
+  functor ContextFun
+
+  signature SUBST
+  functor SubstFun
+
+  signature EQUIV
+  functor EquivFun
+
+  signature TYPECHECK
+  functor TypeCheckFun
+
+  signature RUN
+  functor RunFun
+
+  functor PrintFun
+is
+  ../../cmlib/cmlib.cm
+  ../util/sources.cm
+
+  lang/ABT.sml
+  lang/AbtFun.sml
+
+  context/CONTEXT.sml
+  context/ContextFun.sml
+
+  subst/SUBST.sml
+  subst/SubstFun.sml
+
+  statics/EQUIV.sml
+  statics/EquivFun.sml
+  statics/TYPECHECK.sml
+  statics/TypeCheckFun.sml
+
+  run/RUN.sml
+  run/RunFun.sml
+
+  print/PrintFun.sml

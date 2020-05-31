@@ -1,0 +1,10 @@
+Library
+  structure Cps
+  functor PrintFun
+is
+  ../../cmlib/cmlib.cm
+  sources.cm
+  ../util/sources.cm
+
+  CPS.sml
+  Cps.sml
