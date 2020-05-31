@@ -48,6 +48,15 @@ functor TypeCheckFun(
         Type_not t)
     | Value_tuple vals =>
         Type_product (ParList.map (typeValueSynth ctx) vals)
+    | Value_inj (c, i, v) =>
+        (case weakHeadNormalize ctx c of
+           Type_sum tys => (
+             conEquiv ctx
+             (List.nth (tys, i)) (typeValueSynth ctx v)
+             Kind_type;
+             c
+           )
+        | _ => raise TypeError)
 
   (* ctx |> v <-- c *)
   and typeValueCheck ctx value con =
@@ -64,4 +73,11 @@ functor TypeCheckFun(
            Type_product tys =>
              typeExpCheck (extendType ctx x (List.nth (tys, i))) exp
          | _ => raise TypeError)
+    | Exp_case (v, cases) =>
+        (case weakHeadNormalize ctx (typeValueSynth ctx v) of
+           Type_sum tys =>
+             ListPair.appEq
+             (fn (ty, (x, e)) => typeExpCheck (extendType ctx x ty) e)
+             (tys, cases)
+        | _ => raise TypeError)
 end

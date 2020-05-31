@@ -43,12 +43,17 @@ functor PrintFun(
         head "fn" [raw (vp i), sc c, se e]
     | Value_tuple vals =>
         head "*" (ParList.map sv vals)
+    | Value_inj (c, i, v) =>
+        head "inj" [sc c, int i, sv v]
 
   and se exp =
     case exp of
       Exp_app (v, v') => head "app" [sv v, sv v']
     | Exp_proj (v, i, x, e) =>
         head "proj" [sv v, int i, raw (vp x), se e]
+    | Exp_case (v, exps) =>
+        head "case" ((sv v) ::
+          (ParList.map (fn (x, e) => list [raw (vp x), se e]) exps))
   in
 
   val serializeKind = sk

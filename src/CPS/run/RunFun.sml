@@ -28,6 +28,13 @@ functor RunFun(
            Value_tuple vals =>
              substInExp 0 nil 0 (varSubst [(List.nth (vals, i), x)]) e
          | _ => raise Stuck fullexp)
+    | Exp_case (v, cases) =>
+        (case v of
+           (* by inversion, v should be a injection *)
+           Value_inj (_, i, v) => let
+             val (x, e) = List.nth (cases, i)
+           in substInExp 0 nil 0 (varSubst [(v, x)]) e end
+         | _ => raise Stuck fullexp)
   in exp end
 
   fun run exp = (run (step exp))

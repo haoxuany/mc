@@ -102,6 +102,8 @@ functor SubstFun(
           Value_lam (v, substCon c, substExp e)
       | Value_tuple vals =>
           Value_tuple (ParList.map substValue vals)
+      | Value_inj (c, i, v) =>
+          Value_inj (substCon c, i, substValue v)
   in value end
 
   (* this function alpha varies variables, which is slower, in order
@@ -134,6 +136,8 @@ functor SubstFun(
         in Value_lam (v, substCon c, substExp dictA t) end
       | Value_tuple vals =>
           Value_tuple (ParList.map (substValue dict) vals)
+      | Value_inj (c, i, v) =>
+          Value_inj (substCon c, i, substValue dict v)
   in value end
 
   and substConInExp shifts cons n lifts exp = let
@@ -150,6 +154,9 @@ functor SubstFun(
           Exp_app (substValue v, substValue v')
       | Exp_proj (v, i, x, e) =>
           Exp_proj (substValue v, i, x, substExp e)
+      | Exp_case (v, cases) =>
+          Exp_case (substValue v,
+            ParList.map (fn (x, e) => (x, substExp e)) cases)
   in exp end
 
   (* this function alpha varies variables, which is slower, in order
@@ -174,6 +181,13 @@ functor SubstFun(
       | Exp_proj (v, i, x, e) => let
           val (x, dictA) = alphaNew x
         in Exp_proj (substValue dict v, i, x, substExp dictA e) end
+      | Exp_case (v, cases) =>
+          Exp_case (substValue dict v,
+            ParList.map
+            (fn (x, e) => let
+              val (x, dict) = alphaNew x
+            in (x, substExp dict e) end)
+            cases)
   in exp end
 
   val substInCon = fn shifts => fn cons => fn lifts =>
