@@ -12,71 +12,24 @@ functor SubstFun(
     structure Key = Abt.Variable
   )
 
-  (* easy case: direct variable map substitution *)
-  fun substTerm dict termb = let
-    val subst = substTerm dict
-    fun alphaNew x = let
-      val y = Variable.new ()
-      val subst = substTerm (Dict.insert dict x (Term_var y))
-    in (y, subst) end
+  type vardict = term Dict.dict
+  fun varSubst list =
+    ParList.foldl
+    (fn ((term, var), dict) => Dict.insert dict var term)
+    Dict.empty
+    list
 
-    val termb =
-      case termb of
-        Term_var v =>
-          (case Dict.find dict v of
-             NONE => termb
-           | SOME e => e)
-      | Term_let (a, x, b) => let
-          val (y, substx) = alphaNew x
-        in Term_let (subst a, y, substx b) end
-      | Term_fix (x, c, rest) => let
-          val (y, subst) = alphaNew x
-        in Term_fix (y, c, subst rest) end
-      | Term_lam (x, c, rest) => let
-          val (y, subst) = alphaNew x
-        in Term_lam (y, c, subst rest) end
-      | Term_app (a, b) =>
-          Term_app (subst a, subst b)
-      | Term_polylam (k, a) =>
-          Term_polylam (k, subst a)
-      | Term_polyapp (a, c) =>
-          Term_polyapp (subst a, c)
-      | Term_pack (c, a, c') =>
-          Term_pack (c, subst a, c')
-      | Term_unpack (a, x, b) => let
-          val (y, substx) = alphaNew x
-        in Term_unpack (subst a, y, substx b) end
-      | Term_tuple terms =>
-          Term_tuple (ParList.map subst terms)
-      | Term_proj (a, i) =>
-          Term_proj (subst a, i)
-      | Term_inj (c, i, a) =>
-          Term_inj (c, i, subst a)
-      | Term_case (a, cases) =>
-          Term_case (subst a,
-          ParList.map
-          (fn (x, a) => let
-            val (y, subst) = alphaNew x
-          in (y, subst a) end)
-          cases)
-      | Term_fold (c, a) => Term_fold (c, subst a)
-      | Term_unfold a => Term_unfold (subst a)
-  in termb end
+  (* DeBruijn Explicit substitutions of second order (con + kind) *)
 
-  val substTerm = fn e => fn i => fn e' =>
-    substTerm (Dict.singleton i e) e'
-
-  (* hard case: DeBruijn Explicit substitutions of second order (con + kind) *)
-
-  (* substConInCon [
+  (* substInCon [
   * 0 . 1 . 2 . ... . shifts - 1 .
   * cons0 [^ shifts] . cons1 [^ shifts] . ... . cons(n-1) [^ shifts] .
   * ^ (shifts + l)
   * ] *)
-  fun substConInCon shifts cons n lifts c = let
-    val substCon = substConInCon shifts cons n lifts
-    val substConB = substConInCon (shifts + 1) cons n lifts
-    val substKind = substConInKind shifts cons n lifts
+  fun substInCon shifts cons n lifts c = let
+    val substCon = substInCon shifts cons n lifts
+    val substConB = substInCon (shifts + 1) cons n lifts
+    val substKind = substInKind shifts cons n lifts
 
     val con =
       case c of
@@ -102,7 +55,7 @@ functor SubstFun(
               val i = i - shifts
             in
               (* in second range [tycon substs] *)
-              if i < n then substConInCon 0 [] 0 shifts $ List.nth (cons, i)
+              if i < n then substInCon 0 [] 0 shifts $ List.nth (cons, i)
               (* in third range [lifts] *)
               else Con_var $ v - n (* - shifts + shifts *) + lifts
             end
@@ -118,10 +71,10 @@ functor SubstFun(
       | Con_unit => Con_unit
   in con end
 
-  and substConInKind shifts cons n lifts k = let
-    val substCon = substConInCon shifts cons n lifts
-    val substKind = substConInKind shifts cons n lifts
-    val substKindB = substConInKind (shifts + 1) cons n lifts
+  and substInKind shifts cons n lifts k = let
+    val substCon = substInCon shifts cons n lifts
+    val substKind = substInKind shifts cons n lifts
+    val substKindB = substInKind (shifts + 1) cons n lifts
 
     val kind = case k of
         Kind_type => Kind_type
@@ -137,9 +90,9 @@ functor SubstFun(
   in kind end
 
   fun substConInTerm shifts cons n lifts t = let
-    val substKind = substConInKind shifts cons n lifts
-    val substCon = substConInCon shifts cons n lifts
-    val substConB = substConInCon (shifts + 1) cons n lifts
+    val substKind = substInKind shifts cons n lifts
+    val substCon = substInCon shifts cons n lifts
+    val substConB = substInCon (shifts + 1) cons n lifts
     val substTerm = substConInTerm shifts cons n lifts
     val substTermB = substConInTerm (shifts + 1) cons n lifts
 
@@ -180,10 +133,76 @@ functor SubstFun(
       | Term_unfold t => Term_unfold (substTerm t)
   in term end
 
-  val substConInCon = fn shifts => fn cons => fn lifts =>
-    substConInCon shifts cons (List.length cons) lifts
-  val substConInKind = fn shifts => fn cons => fn lifts =>
-    substConInKind shifts cons (List.length cons) lifts
-  val substConInTerm = fn shifts => fn cons => fn lifts =>
-    substConInTerm shifts cons (List.length cons) lifts
+  (* this function alpha varies variables, which is slower, in order
+  * to handle variable substitution *)
+  and substConTermInTerm shifts cons n lifts dict t = let
+    val substKind = substInKind shifts cons n lifts
+    val substCon = substInCon shifts cons n lifts
+    val substConB = substInCon (shifts + 1) cons n lifts
+    val substTerm = substConTermInTerm shifts cons n lifts
+    val substTermB = substConTermInTerm (shifts + 1) cons n lifts
+
+    fun alphaNew x = let
+      val y = Variable.new ()
+      val dict = Dict.insert dict x (Term_var y)
+    in (y, dict) end
+
+    val term = case t of
+        Term_var v =>
+          (case Dict.find dict v of
+             NONE => t
+           | SOME e =>
+               if shifts = 0 then e
+               (* we could be under binders here, in which case we
+               * need to lift e's constructors to the right aligment *)
+               else substConInTerm 0 nil 0 shifts e)
+      | Term_let (t, v, t') => let
+          val (v, dictA) = alphaNew v
+        in Term_let (substTerm dict t, v, substTerm dictA t') end
+      | Term_fix (v, c, t) => let
+          val (v, dictA) = alphaNew v
+        in Term_fix (v, substCon c, substTerm dictA t) end
+      | Term_lam (v, c, t) => let
+          val (v, dictA) = alphaNew v
+        in Term_lam (v, substCon c, substTerm dictA t) end
+      | Term_app (t, t') =>
+          Term_app (substTerm dict t, substTerm dict t')
+      | Term_polylam (k, t) =>
+          (* t is under a binder *)
+          Term_polylam (substKind k, substTermB dict t)
+      | Term_polyapp (t, c) =>
+          Term_polyapp (substTerm dict t, substCon c)
+      | Term_pack (c, t, c') =>
+          Term_pack (substCon c, substTerm dict t, substCon c')
+      | Term_unpack (t, v, t') => let
+          val (v, dictA) = alphaNew v
+          (* t' is under a tycon and var binder *)
+        in Term_unpack (substTerm dict t, v, substTermB dictA t') end
+      | Term_tuple terms =>
+          Term_tuple $ ParList.map (substTerm dict) terms
+      | Term_proj (t, i) =>
+          Term_proj (substTerm dict t, i)
+      | Term_inj (c, i, t) =>
+          Term_inj (substCon c, i, substTerm dict t)
+      | Term_case (t, cases) =>
+          Term_case (substTerm dict t,
+          ParList.map
+          (fn (v, t) => let
+            val (v, dictA) = alphaNew v
+          in (v, substTerm dictA t) end)
+          cases)
+      | Term_fold (c, t) =>
+          (* c is under a binder *)
+          Term_fold (substConB c, substTerm dict t)
+      | Term_unfold t => Term_unfold (substTerm dict t)
+  in term end
+
+  val substInCon = fn shifts => fn cons => fn lifts =>
+    substInCon shifts cons (List.length cons) lifts
+  val substInKind = fn shifts => fn cons => fn lifts =>
+    substInKind shifts cons (List.length cons) lifts
+  fun substInTerm shifts cons lifts dict =
+    if Dict.isEmpty dict then
+      substConInTerm shifts cons (List.length cons) lifts
+    else substConTermInTerm shifts cons (List.length cons) lifts dict
 end

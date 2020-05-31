@@ -57,12 +57,12 @@ functor TypeCheckFun(
         (case weakHeadNormalize ctx (typeSynth ctx e) of
            Type_forall (k, c') =>
              (kindCheck ctx c k;
-             substConInCon 0 [c] 0 c')
+             substInCon 0 [c] 0 c')
         | _ => raise TypeError)
     | Term_pack (c, e, cexists) =>
         (case weakHeadNormalize ctx cexists of
            Type_exists (k, c') =>
-             (kindCheck ctx c k; typeCheck ctx e (substConInCon 0 [c] 0 c');
+             (kindCheck ctx c k; typeCheck ctx e (substInCon 0 [c] 0 c');
              cexists)
         | _ => raise TypeError)
     | Term_unpack (e, v, e') =>
@@ -73,7 +73,7 @@ functor TypeCheckFun(
              * binding of con to k. However at this point tresult came from
              * context of ctx, cv : k, so we need to unshift tresult to fix
              * indices *)
-             val tresult = substConInCon 0 [] ~1 tresult
+             val tresult = substInCon 0 [] ~1 tresult
              val () = kindCheck ctx tresult Kind_type
            in tresult end
          | _ => raise TypeError)
@@ -113,10 +113,10 @@ functor TypeCheckFun(
         | _ => raise TypeError)
   | Term_fold (c, e) => let
       val ty = Type_rec c
-    in (typeCheck ctx e (substConInCon 0 [ty] 0 c); ty) end
+    in (typeCheck ctx e (substInCon 0 [ty] 0 c); ty) end
   | Term_unfold e =>
       (case weakHeadNormalize ctx (typeSynth ctx e) of
-         (ty as (Type_rec c)) => substConInCon 0 [ty] 0 c
+         (ty as (Type_rec c)) => substInCon 0 [ty] 0 c
        | _ => raise TypeError)
 
 

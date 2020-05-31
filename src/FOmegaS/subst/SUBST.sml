@@ -5,16 +5,18 @@ signature SUBST = sig
   type con
   type term
 
-  val substTerm : term -> var -> term -> term
+  type vardict
+  (* Simultaneous substitutions *)
+  val varSubst : (term * var) list -> vardict
 
-  (* substConInCon [
+  (* substInCon [
   * 0 . 1 . 2 . ... . shifts - 1 .
   * cons0 [^ shifts] . cons1 [^ shifts] . ... . cons(n-1) [^ shifts] .
   * ^ (shifts + l)
   * ] *)
-  val substConInCon : int -> con list -> int -> con -> con
+  val substInCon : int -> con list -> int -> con -> con
 
-  val substConInKind : int -> con list -> int -> kind -> kind
+  val substInKind : int -> con list -> int -> kind -> kind
 
-  val substConInTerm : int -> con list -> int -> term -> term
+  val substInTerm : int -> con list -> int -> vardict -> term -> term
 end

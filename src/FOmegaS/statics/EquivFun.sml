@@ -36,7 +36,7 @@ functor EquivFun(
         Kind_pi (k1,
         singleton
         (* c gets put under a binder from k1, so lift it by 1 *)
-        (Con_app (substConInCon 0 [] 1 c, Con_var 0))
+        (Con_app (substInCon 0 [] 1 c, Con_var 0))
         k2)
     | Kind_sigma (k1, k2) =>
         Kind_sigma (
@@ -45,8 +45,8 @@ functor EquivFun(
           * getting put under a new binder from k1, and [pi1 c/alpha]k2
           * no longer refers to variable in k1; aka this a nondependent product.
           *)
-          substConInKind 0 [] 1
-          (singleton (Con_proj2 c) (substConInKind 0 [Con_proj1 c] 0 k2))
+          substInKind 0 [] 1
+          (singleton (Con_proj2 c) (substInKind 0 [Con_proj1 c] 0 k2))
         )
     | Kind_unit => k
 
@@ -105,21 +105,21 @@ functor EquivFun(
         (case kindSynth ctx c of
            Kind_pi (k', k'') => (
              kindCheck ctx c' k';
-             substConInKind 0 [c'] 0 k''
+             substInKind 0 [c'] 0 k''
            )
         | _ => raise TypeError)
     | Con_pair (c, c') =>
         Kind_sigma (
           kindSynth ctx c,
           (* this is a nondependent product, so needs to be lifted *)
-          substConInKind 0 [] 1 (kindSynth ctx c'))
+          substInKind 0 [] 1 (kindSynth ctx c'))
     | Con_proj1 c =>
         (case kindSynth ctx c of
           Kind_sigma (k', _) => k'
         | _ => raise TypeError)
     | Con_proj2 c =>
         (case kindSynth ctx c of
-           Kind_sigma (_, k'') => substConInKind 0 [Con_proj1 c] 0 k''
+           Kind_sigma (_, k'') => substInKind 0 [Con_proj1 c] 0 k''
          | _ => raise TypeError)
     | Con_unit => Kind_unit
    (* all the annoying base cases that just return the singleton of itself *)
@@ -161,12 +161,12 @@ functor EquivFun(
     | Con_proj2 p =>
         (case kindExtract ctx p of
           Kind_sigma (_, k'') =>
-            substConInKind 0 [Con_proj1 p] 0 k''
+            substInKind 0 [Con_proj1 p] 0 k''
         | _ => raise TypeError)
     | Con_app (p, c) =>
         (case kindExtract ctx p of
            Kind_pi (_, k'') =>
-             substConInKind 0 [c] 0 k''
+             substInKind 0 [c] 0 k''
         | _ => raise TypeError)
     | Con_unit => Kind_unit
     (* constant constructor cases (aka types) *)
@@ -194,7 +194,7 @@ functor EquivFun(
           val c1 = reduce c1
         in
           case c1 of
-            Con_lam (_, cbody) => reduce (substConInCon 0 [c2] 0 cbody)
+            Con_lam (_, cbody) => reduce (substInCon 0 [c2] 0 cbody)
           | _ => Con_app (c1, c2)
         end
       | Con_proj1 c => let
@@ -239,14 +239,14 @@ functor EquivFun(
     | Kind_pi (k', k'') =>
         conEquiv (extendKind ctx k')
         (* extension of kind context requires lifting this by one *)
-        (Con_app (substConInCon 0 [] 1 c, Con_var 0))
-        (Con_app (substConInCon 0 [] 1 c', Con_var 0))
+        (Con_app (substInCon 0 [] 1 c, Con_var 0))
+        (Con_app (substInCon 0 [] 1 c', Con_var 0))
         k''
     | Kind_sigma (k', k'') =>
         (
           conEquiv ctx (Con_proj1 c) (Con_proj2 c') k';
           conEquiv ctx (Con_proj2 c) (Con_proj2 c')
-          (substConInKind 0 [Con_proj1 c] 0 k'')
+          (substInKind 0 [Con_proj1 c] 0 k'')
         )
     | Kind_unit => ()
 
@@ -261,7 +261,7 @@ functor EquivFun(
         (case pathEquiv ctx p1 p2 of
            Kind_pi (k', k'') => (
              conEquiv ctx c1 c2 k';
-             substConInKind 0 [c1] 0 k''
+             substInKind 0 [c1] 0 k''
            )
         | _ => raise TypeError)
     | (Con_proj1 p1, Con_proj1 p2) =>
@@ -270,7 +270,7 @@ functor EquivFun(
         | _ => raise TypeError)
     | (Con_proj2 p1, Con_proj2 p2) =>
         (case pathEquiv ctx p1 p2 of
-           Kind_sigma (_, k'') => substConInKind 0 [Con_proj1 p1] 0 k''
+           Kind_sigma (_, k'') => substInKind 0 [Con_proj1 p1] 0 k''
         | _ => raise TypeError)
     (* this should never get called: constructor equivalence will just work,
     * nevertheless adding this anyway *)

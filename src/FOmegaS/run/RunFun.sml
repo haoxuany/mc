@@ -20,8 +20,9 @@ functor RunFun(
       Term_var _ => raise TermVal
     | Term_let (term, var, term') =>
         ((Term_let (step term, var, term'))
-        handle TermVal => substTerm term var term')
-    | Term_fix (var, _, term) => substTerm fullterm var term
+        handle TermVal => substInTerm 0 nil 0 (varSubst [(term, var)]) term')
+    | Term_fix (var, _, term) =>
+        substInTerm 0 nil 0 (varSubst [(fullterm, var)]) term
     | Term_lam _ => raise TermVal
     | Term_app (term, term') =>
         ((Term_app ((step term, term')))
@@ -31,7 +32,7 @@ functor RunFun(
           (* inversion tells us that term should be a lamda *)
             (case term of
                Term_lam (x, _, rest) =>
-                 substTerm term' x rest
+                 substInTerm 0 nil 0 (varSubst [(term', x)]) rest
              | _ => raise Stuck fullterm)
           ))
     | Term_polylam _ => raise TermVal
@@ -41,7 +42,7 @@ functor RunFun(
           (* inversion tells us this should be a lambda *)
           (case term of
              Term_polylam (_, t) =>
-               substConInTerm 0 [con] 0 t
+               substInTerm 0 [con] 0 (varSubst nil) t
            | _ => raise Stuck fullterm))
     | Term_pack (c, t, c') => Term_pack (c, step t, c')
     | Term_unpack (t, v, t') =>
@@ -50,7 +51,7 @@ functor RunFun(
           (* inversion tell us this should be a pack *)
           (case t of
              Term_pack (c, t, c') =>
-               substConInTerm 0 [c] 0 (substTerm t v t')
+               substInTerm 0 [c] 0 (varSubst [(t, v)]) t'
            | _ => raise Stuck fullterm))
     | Term_tuple terms => let
         fun eval_tuple l =
@@ -74,7 +75,7 @@ functor RunFun(
           case term of
             Term_inj (_, i, term) => let
               val (x, rest) = List.nth (terms, i)
-            in substTerm term x rest end
+            in substInTerm 0 nil 0 (varSubst [(term, x)]) rest end
           | _ => raise Stuck fullterm
         )
     | Term_fold (con, term) => Term_fold (con, step term)

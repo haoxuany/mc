@@ -53,12 +53,12 @@ where type term = Abt.term
     (* when pulling out the ith judgement, this requires lifting
     * i + 1 times to avoid capture. +1 because lists are 0-indexed,
     * and we need to avoid 0 referring to itself (so lift one more time) *)
-    substConInKind 0 nil (i + 1)
+    substInKind 0 nil (i + 1)
     (List.nth (conOfKind, i))
 
   fun lookupType ({termOfType, conOfKindN, ...} : t) var = let
     val {ty, index} = Dict.lookup termOfType var
-  in substConInCon 0 nil (conOfKindN - index) ty end
+  in substInCon 0 nil (conOfKindN - index) ty end
 
 
 end
