@@ -22,6 +22,12 @@ functor RunFun(
            Value_lam (var, con, exp) =>
              substInExp 0 nil 0 (varSubst [(v', var)]) exp
          | _ => raise Stuck fullexp)
+    | Exp_proj (v, i, x, e) =>
+        (case v of
+           (* by inversion, v should be a tuple *)
+           Value_tuple vals =>
+             substInExp 0 nil 0 (varSubst [(List.nth (vals, i), x)]) e
+         | _ => raise Stuck fullexp)
   in exp end
 
   fun run exp = (run (step exp))
