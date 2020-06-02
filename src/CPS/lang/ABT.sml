@@ -32,12 +32,14 @@ signature ABT = sig
   and value =
     Value_var of var
   | Value_lam of var * con * exp
+  | Value_pack of con * value * con
   | Value_tuple of value list
   | Value_inj of con * int * value
   | Value_fold of con * value
 
   and exp =
     Exp_app of value * value
+  | Exp_unpack of value * var * exp
   | Exp_proj of value * int * var * exp
   | Exp_case of value * (var * exp) list
   | Exp_unfold of value * var * exp

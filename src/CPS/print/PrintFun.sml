@@ -41,6 +41,8 @@ functor PrintFun(
       Value_var i => raw (vp i)
     | Value_lam (i, c, e) =>
         head "fn" [raw (vp i), sc c, se e]
+    | Value_pack (c, v, c') =>
+        head "pack" [sc c, sv v, sc c]
     | Value_tuple vals =>
         head "*" (ParList.map sv vals)
     | Value_inj (c, i, v) =>
@@ -51,6 +53,8 @@ functor PrintFun(
   and se exp =
     case exp of
       Exp_app (v, v') => head "app" [sv v, sv v']
+    | Exp_unpack (v, x, e) =>
+        head "unpack" [sv v, raw (vp x), se e]
     | Exp_proj (v, i, x, e) =>
         head "proj" [sv v, int i, raw (vp x), se e]
     | Exp_case (v, exps) =>

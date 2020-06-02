@@ -100,6 +100,8 @@ functor SubstFun(
       | Value_lam (v, c, e) =>
           (* only variable binder here, no debruijn binder *)
           Value_lam (v, substCon c, substExp e)
+      | Value_pack (c, v, c') =>
+          Value_pack (substCon c, substValue v, substCon c')
       | Value_tuple vals =>
           Value_tuple (ParList.map substValue vals)
       | Value_inj (c, i, v) =>
@@ -137,6 +139,8 @@ functor SubstFun(
       | Value_lam (v, c, t) => let
           val (v, dictA) = alphaNew v
         in Value_lam (v, substCon c, substExp dictA t) end
+      | Value_pack (c, v, c') =>
+          Value_pack (substCon c, substValue dict v, substCon c')
       | Value_tuple vals =>
           Value_tuple (ParList.map (substValue dict) vals)
       | Value_inj (c, i, v) =>
@@ -158,6 +162,8 @@ functor SubstFun(
     val exp = case exp of
         Exp_app (v, v') =>
           Exp_app (substValue v, substValue v')
+      | Exp_unpack (v, x, e) =>
+          Exp_unpack (substValue v, x, substExpB e)
       | Exp_proj (v, i, x, e) =>
           Exp_proj (substValue v, i, x, substExp e)
       | Exp_case (v, cases) =>
@@ -188,6 +194,9 @@ functor SubstFun(
     val exp = case exp of
         Exp_app (v, v') =>
           Exp_app (substValue dict v, substValue dict v')
+      | Exp_unpack (v, x, e) => let
+          val (x, dictA) = alphaNew x
+        in Exp_unpack (substValue dict v, x, substExpB dictA e) end
       | Exp_proj (v, i, x, e) => let
           val (x, dictA) = alphaNew x
         in Exp_proj (substValue dict v, i, x, substExp dictA e) end

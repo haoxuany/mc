@@ -22,6 +22,12 @@ functor RunFun(
            Value_lam (var, con, exp) =>
              substInExp 0 nil 0 (varSubst [(v', var)]) exp
          | _ => raise Stuck fullexp)
+    | Exp_unpack (v, x, e) =>
+        (case v of
+           (* by inversion, v should be a pack *)
+           Value_pack (c, v, _) =>
+             substInExp 0 [c] 0 (varSubst [(v, x)]) e
+         | _ => raise Stuck fullexp)
     | Exp_proj (v, i, x, e) =>
         (case v of
            (* by inversion, v should be a tuple *)
