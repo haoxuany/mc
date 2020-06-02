@@ -1,0 +1,17 @@
+Library
+  structure CpsConversion
+  structure DebugTranslation
+is
+  ../../../cmlib/cmlib.cm
+  ../../util/sources.cm
+  cps.cm
+  fomegas.cm
+
+  CpsConstructorTranslation.sml
+
+  DEBUGTRANSLATION.sml
+  DebugTranslation.sml
+
+  CpsConversionFun.sml
+
+  CpsConversionDebug.sml

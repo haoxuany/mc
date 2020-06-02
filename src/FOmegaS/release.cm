@@ -1,5 +1,6 @@
 Library
   structure FOmegaS
+  signature FOMEGAS
   functor PrintFun
 is
   ../../cmlib/cmlib.cm
