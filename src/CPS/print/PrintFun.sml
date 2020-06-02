@@ -58,6 +58,8 @@ functor PrintFun(
           (ParList.map (fn (x, e) => list [raw (vp x), se e]) exps))
     | Exp_unfold (v, x, e) =>
         head "unfold" [sv v, raw (vp x), se e]
+    | Exp_let (v, x, e) =>
+        head "let" [sv v, raw (vp x), se e]
   in
 
   val serializeKind = sk

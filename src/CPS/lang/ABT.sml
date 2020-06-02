@@ -41,4 +41,5 @@ signature ABT = sig
   | Exp_proj of value * int * var * exp
   | Exp_case of value * (var * exp) list
   | Exp_unfold of value * var * exp
+  | Exp_let of value * var * exp
 end

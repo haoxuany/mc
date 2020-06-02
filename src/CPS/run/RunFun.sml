@@ -41,6 +41,8 @@ functor RunFun(
            Value_fold (_, v) =>
              substInExp 0 nil 0 (varSubst [(v, x)]) e
          | _ => raise Stuck fullexp)
+    | Exp_let (v, x, e) =>
+        substInExp 0 nil 0 (varSubst [(v, x)]) e
   in exp end
 
   fun run exp = (run (step exp))

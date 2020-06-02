@@ -88,4 +88,6 @@ functor TypeCheckFun(
            (ty as (Type_rec c)) =>
              typeExpCheck (extendType ctx x (substInCon 0 [ty] 0 c)) e
          | _ => raise TypeError)
+    | Exp_let (v, x, e) =>
+        typeExpCheck (extendType ctx x (typeValueSynth ctx v)) e
 end

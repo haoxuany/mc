@@ -165,6 +165,8 @@ functor SubstFun(
             ParList.map (fn (x, e) => (x, substExp e)) cases)
       | Exp_unfold (v, x, e) =>
           Exp_unfold (substValue v, x, substExp e)
+      | Exp_let (v, x, e) =>
+          Exp_let (substValue v, x, substExp e)
   in exp end
 
   (* this function alpha varies variables, which is slower, in order
@@ -199,6 +201,9 @@ functor SubstFun(
       | Exp_unfold (v, x, e) => let
           val (x, dictA) = alphaNew x
         in Exp_unfold (substValue dict v, x, substExp dictA e) end
+      | Exp_let (v, x, e) => let
+          val (x, dictA) = alphaNew x
+        in Exp_let (substValue dict v, x, substExp dictA e) end
   in exp end
 
   val substInCon = fn shifts => fn cons => fn lifts =>
