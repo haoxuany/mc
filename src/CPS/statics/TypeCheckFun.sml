@@ -76,7 +76,7 @@ functor TypeCheckFun(
     case exp of
       Exp_app (v, v') =>
         (case weakHeadNormalize ctx (typeValueSynth ctx v) of
-           Type_not c => typeValueCheck ctx v c
+           Type_not c => typeValueCheck ctx v' c
          | _ => raise TypeError)
     | Exp_unpack (v, x, e) =>
         (case weakHeadNormalize ctx (typeValueSynth ctx v) of
