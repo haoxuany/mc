@@ -33,7 +33,8 @@ functor SubstFun(
 
     val con =
       case c of
-        Type_arrow (c1, c2) => Type_arrow (substCon c1, substCon c2)
+        Type_arrow (c, c') => Type_arrow (substCon c, substCon c')
+      | Type_productfix tys => Type_productfix $ ParList.map substCon tys
       | Type_forall (k, c') =>
           (* c' is under a binder *)
           Type_forall (substKind k, substConB c')
@@ -100,12 +101,13 @@ functor SubstFun(
         Term_var v => t
       | Term_let (t, v, t') =>
           Term_let (substTerm t, v, substTerm t')
-      | Term_fix (v, c, t) =>
-          (* only variable binder here, no debruijn binder *)
-          Term_fix (v, substCon c, substTerm t)
-      | Term_lam (v, c, t) =>
-          (* only variable binder here, no debruijn binder *)
-          Term_lam (v, substCon c, substTerm t)
+      | Term_fixlam lams =>
+          Term_fixlam (ParList.map
+            (fn (f, x, c, t, c') => (f, x, substCon c, substTerm t, substCon c'))
+            lams
+          )
+      | Term_pick (t, i) =>
+          Term_pick (substTerm t, i)
       | Term_app (t, t') =>
           Term_app (substTerm t, substTerm t')
       | Term_polylam (k, t) =>
@@ -159,12 +161,27 @@ functor SubstFun(
       | Term_let (t, v, t') => let
           val (v, dictA) = alphaNew v
         in Term_let (substTerm dict t, v, substTerm dictA t') end
-      | Term_fix (v, c, t) => let
-          val (v, dictA) = alphaNew v
-        in Term_fix (v, substCon c, substTerm dictA t) end
-      | Term_lam (v, c, t) => let
-          val (v, dictA) = alphaNew v
-        in Term_lam (v, substCon c, substTerm dictA t) end
+      | Term_fixlam lams => let
+          val (fs, dict) = List.foldr
+          (fn ((f, _, c, _, c'), (fs, dict)) => let
+            val f' = Variable.new ()
+            val dict = Dict.insert dict f (Term_var f')
+          in (f' :: fs, dict) end)
+          (nil, dict)
+          lams
+        in
+          Term_fixlam (ParList.map
+            (fn ((_, x, c, t, c'), f) => let
+              val y = Variable.new ()
+              val dict = Dict.insert dict x (Term_var y)
+            in
+              (f, y, substCon c, substTerm dict t, substCon c')
+            end)
+            (ListPair.zip (lams, fs))
+          )
+        end
+      | Term_pick (t, i) =>
+          Term_pick (substTerm dict t, i)
       | Term_app (t, t') =>
           Term_app (substTerm dict t, substTerm dict t')
       | Term_polylam (k, t) =>

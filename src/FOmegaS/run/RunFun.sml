@@ -21,19 +21,26 @@ functor RunFun(
     | Term_let (term, var, term') =>
         ((Term_let (step term, var, term'))
         handle TermVal => substInTerm 0 nil 0 (varSubst [(term, var)]) term')
-    | Term_fix (var, _, term) =>
-        substInTerm 0 nil 0 (varSubst [(fullterm, var)]) term
-    | Term_lam _ => raise TermVal
+    | Term_fixlam _ => raise TermVal
+    | Term_pick (term, i) => Term_pick (step term, i)
     | Term_app (term, term') =>
         ((Term_app ((step term, term')))
         handle TermVal =>
           ((Term_app (term, (step term')))
           handle TermVal =>
-          (* inversion tells us that term should be a lamda *)
+          (* inversion tells us that term should be a
+          * projection of some fixpoint product of lambdas *)
             (case term of
-               Term_lam (x, _, rest) =>
-                 substInTerm 0 nil 0 (varSubst [(term', x)]) rest
-             | _ => raise Stuck fullterm)
+               Term_pick (fix as (Term_fixlam lams), i) => let
+                 val substs = ParList.map
+                   (fn ((f, _, _, _, _), i) =>
+                     (Term_pick (fix, i), f))
+                   (ListPair.zip (lams,
+                     ParList.tabulate (List.length lams, fn i => i)))
+                 val (_, x, _, term, _) = List.nth (lams, i)
+               in substInTerm 0 nil 0
+                  (varSubst ((term', x) :: substs)) term end
+            | _ => raise Stuck fullterm)
           ))
     | Term_polylam _ => raise TermVal
     | Term_polyapp (term, con) =>

@@ -125,8 +125,11 @@ functor EquivFun(
    (* all the annoying base cases that just return the singleton of itself *)
    (* we also make an extra check for constructor validity, because the type
    * can be technically malformed *)
-   | Type_arrow (c, c') =>
-       (kindCheck ctx c Kind_type; kindCheck ctx c' Kind_type;
+    | Type_arrow (c, c') =>
+        (kindCheck ctx c Kind_type; kindCheck ctx c' Kind_type;
+       Kind_singleton allc)
+    | Type_productfix tys =>
+        (ParList.map (fn c => kindCheck ctx c Kind_type) tys;
        Kind_singleton allc)
    | Type_forall (k, c) =>
        (kindValid ctx k; kindCheck (extendKind ctx k) c Kind_type;
@@ -171,6 +174,7 @@ functor EquivFun(
     | Con_unit => Kind_unit
     (* constant constructor cases (aka types) *)
     | Type_arrow _ => Kind_type
+    | Type_productfix _ => Kind_type
     | Type_forall _ => Kind_type
     | Type_exists _ => Kind_type
     | Type_product _ => Kind_type
@@ -276,8 +280,12 @@ functor EquivFun(
     * nevertheless adding this anyway *)
     | (Con_unit, Con_unit) => Kind_unit
     (* the rest are the annoying and unilluminating constant cases *)
-    | (Type_arrow (c1, c2), Type_arrow (c3, c4)) =>
-        (conEquiv ctx c1 c3 Kind_type; conEquiv ctx c2 c4 Kind_type;
+    | (Type_arrow (c1, c1'), Type_arrow (c2, c2')) =>
+        (conEquiv ctx c1 c2 Kind_type; conEquiv ctx c1' c2' Kind_type;
+        Kind_type)
+    | (Type_productfix tys, Type_productfix tys') =>
+        (ParList.map (fn (ty, ty') => conEquiv ctx ty ty' Kind_type)
+          (ListPair.zip (tys, tys'));
         Kind_type)
     | (Type_forall (k1, c1), Type_forall (k2, c2)) =>
         (kindEquiv ctx k1 k2; conEquiv (extendKind ctx k1) c1 c2 Kind_type;

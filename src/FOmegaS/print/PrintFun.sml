@@ -23,6 +23,7 @@ functor PrintFun(
   and sc con =
    case con of
      Type_arrow (a, b) => head "->" [sc a, sc b]
+   | Type_productfix cons => head "*" (ParList.map sc cons)
    | Type_forall (k, c) => head "forall" [sk k, sc c]
    | Type_exists (k, c) => head "exists" [sk k, sc c]
    | Type_product cons => head "*" (ParList.map sc cons)
@@ -42,11 +43,12 @@ functor PrintFun(
       Term_var i => raw (vp i)
     | Term_let (t, x, t') =>
         head "let" [st t, raw (vp x), st t']
-    | Term_fix (i, c, t) =>
-        head "fix" [raw (vp i), sc c, st t]
-    | Term_lam (i, c, t) =>
-        head "fn" [raw (vp i), sc c, st t]
-    | Term_app (t, t') => head "app" [st t, st t]
+    | Term_fixlam lams =>
+        head "fixlam"
+          (ParList.map (fn (f, x, c, t, c') =>
+          head "fn" [raw (vp f), raw (vp x), sc c, st t, sc c']) lams)
+    | Term_pick (t, i) => head "pick" [st t, int i]
+    | Term_app (t, t') => head "app" [st t, st t']
     | Term_polylam (k, t) => head "tfn" [sk k, st t]
     | Term_polyapp (t, c) => head "tapp" [st t, sc c]
     | Term_pack (c, t, c') => head "pack" [sc c, st t, sc c']

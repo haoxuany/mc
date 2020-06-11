@@ -14,6 +14,7 @@ signature ABT = sig
   and con =
     (* types *)
     Type_arrow of con * con
+  | Type_productfix of con list (* this acts like Type_product, but reserved for fixed points *)
   | Type_forall of kind * con
   | Type_exists of kind * con
   | Type_product of con list
@@ -33,8 +34,8 @@ signature ABT = sig
   and term =
     Term_var of var
   | Term_let of term * var * term
-  | Term_fix of var * con * term
-  | Term_lam of var * con * term
+  | Term_fixlam of (var * var * con * term * con) list
+  | Term_pick of term * int
   | Term_app of term * term
   | Term_polylam of kind * term
   | Term_polyapp of term * con

@@ -41,11 +41,13 @@ structure Examples = struct
   infixr 4 $
 
   val example_id = let
+    val f = newvar ()
     val x = newvar ()
   in
-    Term_lam (x,
-      Type_arrow (Type_exn, Type_exn),
-      Term_var x)
+    Term_fixlam [
+      (f, x, Type_exn,
+      Term_var x, Type_exn)
+    ]
   end
   val () = printExample
     "Identity Function"
@@ -54,14 +56,14 @@ structure Examples = struct
   val example_poly = let
     val x = newvar ()
     val y = newvar ()
+    val f = newvar ()
   in
     Term_let (
       Term_polylam (
         Kind_type,
-        Term_lam (x,
-          Type_arrow (Con_var 0, Con_var 0),
-          Term_var x)
-        ),
+        Term_fixlam
+          [(f, x, Con_var 0,
+          Term_var x, Con_var 0)]),
     y,
     Term_polyapp (Term_var y, Type_exn))
   end
@@ -75,22 +77,28 @@ structure Examples = struct
   val ff = Term_inj (bool, 1, un)
 
   val example_flip = let
+    val f = newvar ()
     val y = newvar ()
     val a = newvar ()
     val b = newvar ()
   in
-    Term_lam (y, bool, Term_case (Term_var y, [(a, ff), (b, tt)]))
+    Term_fixlam
+      [(f, y, bool,
+      Term_case (Term_var y, [(a, ff), (b, tt)]), bool)]
   end
   val () = printExample
     "Boolean flip function"
     example_flip
 
   val example_istrue = let
+    val f = newvar ()
     val y = newvar ()
     val a = newvar ()
     val b = newvar ()
   in
-    Term_lam (y, bool, Term_case (Term_var y, [(a, tt), (b, ff)]))
+    Term_fixlam
+      [(f, y, bool,
+      Term_case (Term_var y, [(a, tt), (b, ff)]), bool)]
   end
   val () = printExample
     "Boolean istrue function"
@@ -103,7 +111,7 @@ structure Examples = struct
       Type_exists (Kind_type,
         Type_product [
           Con_var 0,
-          Type_arrow (Con_var 0, bool)
+          Type_productfix [Type_arrow (Con_var 0, bool)]
         ])
     )
   val () = printExample
@@ -116,7 +124,7 @@ structure Examples = struct
     Term_unpack (example_istruepack,
       x,
       Term_app
-        (Term_proj (Term_var x, 1),
+        (Term_pick (Term_proj (Term_var x, 1), 0),
         Term_proj (Term_var x, 0)))
   end
   val () = printExample
@@ -124,18 +132,19 @@ structure Examples = struct
     example_istrueunpack
 
   val example_fixpoint = let
-    val x = newvar ()
+    val f = newvar ()
     val y = newvar ()
     val a = newvar ()
     val b = newvar ()
     val temp = newvar ()
   in
     Term_let (
-    Term_fix (x, Type_arrow (bool, bool),
-      Term_lam (y, bool,
-        Term_case (Term_var y, [(a, tt), (b, Term_app (Term_var x, tt))]))),
+    Term_fixlam
+      [(f, y, bool,
+        Term_case (Term_var y,
+          [(a, tt), (b, Term_app (Term_var f, tt))]), bool)],
     temp,
-    Term_app (Term_var temp, ff)
+    Term_app (Term_pick (Term_var temp, 0), ff)
     )
   end
   val () = printExample
