@@ -34,6 +34,8 @@ functor SubstFun(
     val con =
       case c of
         Type_not c => Type_not (substCon c)
+      | Type_productfix tys =>
+          Type_productfix $ ParList.map substCon tys
       | Type_exists (k, c') =>
           (* c' is under a binder *)
           Type_exists (substKind k, substConB c')
@@ -97,6 +99,12 @@ functor SubstFun(
 
     val value = case value of
         Value_var v => value
+      | Value_fixlam lams =>
+          Value_fixlam (ParList.map
+            (fn (f, x, c, e) => (f, x, substCon c, substExp e))
+            lams)
+      | Value_pick (v, i) =>
+          Value_pick (substValue v, i)
       | Value_lam (v, c, e) =>
           (* only variable binder here, no debruijn binder *)
           Value_lam (v, substCon c, substExp e)
@@ -136,6 +144,22 @@ functor SubstFun(
                (* we could be under binders here, in which case we
                * need to lift e's constructors to the right aligment *)
                else substConInValue 0 nil 0 shifts v)
+      | Value_fixlam lams => let
+          val (fs, dict) = List.foldr
+          (fn ((f, _, _, _), (fs, dict)) => let
+            val f' = Variable.new ()
+            val dict = Dict.insert dict f (Value_var f')
+          in (f' :: fs, dict) end)
+          (nil, dict)
+          lams
+        in Value_fixlam (ParList.map
+          (fn ((_, x, c, e), f) => let
+            val y = Variable.new ()
+            val dict = Dict.insert dict x (Value_var y)
+          in (f, y, substCon c, substExp dict e) end)
+          (ListPair.zip (lams, fs))) end
+      | Value_pick (v, i) =>
+          Value_pick (substValue dict v, i)
       | Value_lam (v, c, t) => let
           val (v, dictA) = alphaNew v
         in Value_lam (v, substCon c, substExp dictA t) end

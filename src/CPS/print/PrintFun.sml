@@ -23,6 +23,7 @@ functor PrintFun(
   and sc con =
    case con of
      Type_not c => head "not" [sc c]
+   | Type_productfix cons => head "*" (ParList.map sc cons)
    | Type_exists (k, c) => head "exists" [sk k, sc c]
    | Type_product cons => head "*" (ParList.map sc cons)
    | Type_sum cons => head "+" (ParList.map sc cons)
@@ -39,6 +40,12 @@ functor PrintFun(
   and sv value =
     case value of
       Value_var i => raw (vp i)
+    | Value_fixlam lams =>
+        head "fix" (ParList.map (fn (f, x, c, e) =>
+          head "fn" [raw (vp f), raw (vp x), sc c, se e])
+          lams)
+    | Value_pick (v, i) =>
+        head "pick" [sv v, int i]
     | Value_lam (i, c, e) =>
         head "fn" [raw (vp i), sc c, se e]
     | Value_pack (c, v, c') =>

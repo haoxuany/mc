@@ -42,6 +42,22 @@ functor TypeCheckFun(
   fun typeValueSynth ctx value =
     case value of
       Value_var v => lookupType ctx v
+    | Value_fixlam lams => let
+        val (ctx, tys) = List.foldr
+          (fn ((f, _, c, _), (ctx, tys)) => let
+            val ty = Type_not c
+          in (extendType ctx f ty, ty :: tys) end)
+          (ctx, nil)
+          lams
+        val _ = ParList.map
+          (fn (_, x, c, e) =>
+            (kindCheck ctx c Kind_type; typeExpCheck (extendType ctx x c) e))
+          lams
+      in Type_productfix tys end
+    | Value_pick (v, i) =>
+        (case weakHeadNormalize ctx (typeValueSynth ctx v) of
+           Type_productfix cons => List.nth (cons, i)
+        | _ => raise TypeError)
     | Value_lam (v, t, e) =>
         (kindCheck ctx t Kind_type;
         typeExpCheck (extendType ctx v t) e;

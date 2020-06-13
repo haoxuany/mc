@@ -130,6 +130,9 @@ functor EquivFun(
    | Type_not c =>
        (kindCheck ctx c Kind_type;
        Kind_singleton allc)
+   | Type_productfix tys =>
+       (ParList.map (fn c => kindCheck ctx c Kind_type) tys;
+       Kind_singleton allc)
    | Type_exists (k, c) =>
        (kindValid ctx k; kindCheck (extendKind ctx k) c Kind_type;
        Kind_singleton allc)
@@ -170,6 +173,7 @@ functor EquivFun(
     | Con_unit => Kind_unit
     (* constant constructor cases (aka types) *)
     | Type_not _ => Kind_type
+    | Type_productfix _ => Kind_type
     | Type_exists _ => Kind_type
     | Type_product _ => Kind_type
     | Type_sum _ => Kind_type
@@ -276,6 +280,12 @@ functor EquivFun(
     (* the rest are the annoying and unilluminating constant cases *)
     | (Type_not c, Type_not c') =>
         (conEquiv ctx c c' Kind_type;
+        Kind_type)
+    | (Type_productfix tys, Type_productfix tys') =>
+        (* TODO: a parallel version of listpair would be nice *)
+        (ListPair.appEq
+        (fn (ty1, ty2) => conEquiv ctx ty1 ty2 Kind_type)
+        (tys, tys');
         Kind_type)
     | (Type_exists (k1, c1), Type_exists (k2, c2)) =>
         (kindEquiv ctx k1 k2; conEquiv (extendKind ctx k1) c1 c2 Kind_type;

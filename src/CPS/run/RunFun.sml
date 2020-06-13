@@ -18,9 +18,15 @@ functor RunFun(
     val exp = case exp of
       Exp_app (v, v') =>
         (case v of
-           (* by inversion, v should be a lambda *)
+           (* by inversion, v should be a lambda or a pick of some fixpoint lambda*)
            Value_lam (var, con, exp) =>
              substInExp 0 nil 0 (varSubst [(v', var)]) exp
+         | Value_pick (fix as (Value_fixlam lams), i) => let
+             val substs = ParList.map
+               (fn ((f, _, _, _), i) => (Value_pick (fix, i), f))
+               (ListPair.zip (lams, List.tabulate (List.length lams, fn i => i)))
+             val (_, x, _, e) = List.nth (lams, i)
+           in substInExp 0 nil 0 (varSubst ((v', x) :: substs)) e end
          | _ => raise Stuck fullexp)
     | Exp_unpack (v, x, e) =>
         (case v of
