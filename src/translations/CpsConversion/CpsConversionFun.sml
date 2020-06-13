@@ -10,9 +10,6 @@ functor CpsConversionFun(
   open CpsConstructorTranslation
   open DebugTranslation
 
-  (* TODO: remove this *)
-  exception TODO
-
   val new = Variable.new
   exception TypeError
 
@@ -63,44 +60,71 @@ functor CpsConversionFun(
       in (result, tau, tau') end
       debug "let"
 
-    | S.Term_fix (x, c, e) => let
-        (* TODO: I have to think about this *)
-      in raise TODO end
-      debug "fix"
+    | S.Term_fixlam lams => let
+        val ctx = List.foldl
+          (fn ((f, x, c, e, c'), ctx) => extendType ctx f (S.Type_arrow (c, c')))
+          ctx
+          lams
 
-    | S.Term_lam (x, t, e) => let
-        (* assume of type t -> t' ==> not (u * not u' * not exn) *)
-        val u = translateCon t
-        val k' = new () (* : not u' *)
-        val kexn' = new ()
-        val (e', t', u') = translateTerm (extendType ctx x t) e k' kexn'
+        val fixlam = ParList.map
+          (fn (f, x, t, e, t') => let
+            val u = translateCon t
+            val k' = new () (* : not u' *)
+            val kexn' = new ()
+            val (e', _, u') = translateTerm (extendType ctx x t) e k' kexn'
 
-        val y = new () (* : u * not u' * not exn *)
-        val ytau' =
-          T.Type_product [u, T.Type_not u', T.Type_not T.Type_exn];
-        val result = T.Exp_app (
-          T.Value_var k, (* : not (not (u * not u' * not exn)) *)
-          T.Value_lam (
-            y, ytau',
-            T.Exp_proj (
-              T.Value_var y, 0,
-              x, (* : u *)
+            val y = new () (* u * not u' * not exn *)
+            val ytau = T.Type_product [u, T.Type_not u', T.Type_not T.Type_exn]
+            val lam =
+              (* lam y : ytau. *)
               T.Exp_proj (
-                T.Value_var y, 1,
-                k', (* : not u' *)
+                T.Value_var y, 0,
+                x, (* : u *)
                 T.Exp_proj (
-                  T.Value_var y, 2,
-                  kexn', (* : not exn *)
-                  e'
+                  T.Value_var y, 1,
+                  k', (* : not u' *)
+                  T.Exp_proj (
+                    T.Value_var y, 2,
+                    kexn',
+                    e'
+                  )
                 )
               )
-            )
-          )
-        )
-        val tau = S.Type_arrow (t, t')
-        val tau' = T.Type_not ytau'
+            val tau = S.Type_arrow (t, t')
+            val tau' = T.Type_not ytau
+          in (f, y, ytau, lam, tau, tau') end)
+          lams
+
+        val (result, tau, tau') = List.foldr
+          (fn ((f, x, c, e, tau, tau'), (lam, taus, tau's)) =>
+            ((f, x, c, e) :: lam, tau :: taus, tau' :: tau's))
+          (nil, nil, nil)
+          fixlam
+
+        val result = T.Exp_app (T.Value_var k, T.Value_fixlam result)
+        val tau = S.Type_productfix tau
+        val tau' = T.Type_productfix tau'
       in (result, tau, tau') end
-      debug "lam"
+      debug "fixlam"
+    | S.Term_pick (e, i) => let
+        val k' = new () (* : not productfix [...] *)
+        val (e', t, u) = translateTerm ctx e k' kexn
+
+        val x = new () (* : productfix [...] *)
+        val result = T.Exp_let (
+          T.Value_lam (
+            x, u,
+            T.Exp_app (T.Value_var k, T.Value_pick (T.Value_var x, i))
+          ),
+          k',
+          e'
+        )
+        val tau = case weakHeadNormalize ctx t of
+          S.Type_productfix c => List.nth (c, i)
+        | _ => raise TypeError
+        val tau' = translateCon tau
+      in (result, tau, tau') end
+      debug "pick"
 
     | S.Term_app (e1, e2) => let
         (* assume e1 : t1 -> t2, e2 : t1 *)

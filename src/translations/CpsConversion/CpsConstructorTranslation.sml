@@ -35,6 +35,7 @@ structure CpsConstructorTranslation = struct
           T.Type_not (translateCon c'), (* continuation for the result *)
           T.Type_not T.Type_exn (* continuation if function throws exception *)
         ])
+    | S.Type_productfix cons => T.Type_productfix (ParList.map translateCon cons)
     | S.Type_forall (k, c) =>
         T.Type_not (T.Type_exists (
           translateKind k, (* input *)
