@@ -2,6 +2,8 @@
 signature CPS = sig
   (* Abstract Binding Tree of CPS with Singleton Kinds *)
   structure Abt : ABT
+  (* Free variables of expressions and values *)
+  structure FreeVars : FREEVARS
   (* Representation of contexts (using debruijn indicies at the kind and con binding level) *)
   structure Context : CONTEXT
   (* Utilities for explicit substitutions [Abadi, Cardelli, Curien, Levy 1990] *)

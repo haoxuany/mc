@@ -2,6 +2,9 @@ Library
   signature ABT
   functor AbtFun
 
+  signature FREEVARS
+  functor FreeVarsFun
+
   signature CONTEXT
   functor ContextFun
 
@@ -24,6 +27,8 @@ is
 
   lang/ABT.sml
   lang/AbtFun.sml
+  lang/FREEVARS.sml
+  lang/FreeVarsFun.sml
 
   context/CONTEXT.sml
   context/ContextFun.sml
