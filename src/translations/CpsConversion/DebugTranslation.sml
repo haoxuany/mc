@@ -42,5 +42,27 @@ structure DebugTranslation : DEBUGTRANSLATION = struct
     (texp : T.exp)
     (tty : T.con)
     (name : string) = let
+    fun check thm f = (f ()) handle e =>
+      (TextIO.print (String.concat [
+        "For CPS Conversion, step '", name,
+        "' failed for thm (", thm,
+        ") with failure: ", General.exnName e,
+        ": ", General.exnMessage e, "\n"]);
+        raise e)
+
+    val () = check
+      "original program typechecks"
+      (fn () => SLang.TypeCheck.typeCheck (#1 ctx) sexp sty)
+    val () = check
+      "type translation consistent"
+      (fn () => TLang.Equiv.conEquiv (#2 ctx)
+        (translateCon sty) tty T.Kind_type)
+    val () = check
+      "translated program typechecks"
+      (fn () => TLang.TypeCheck.typeExpCheck
+        (TLang.Context.extendType
+          (TLang.Context.extendType (#2 ctx) k (T.Type_not tty))
+          kexn (T.Type_not T.Type_exn))
+        texp)
   in () end
 end
