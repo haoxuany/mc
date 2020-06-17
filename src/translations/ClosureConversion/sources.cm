@@ -1,0 +1,13 @@
+Library
+  structure ClosureConversionDebug
+is
+  ../../../cmlib/cmlib.cm
+  ../../util/sources.cm
+  cps.cm
+
+  DEBUGTRANSLATION.sml
+  DebugTranslation.sml
+  ClosureConversionDebug.sml
+
+  ClosureConversionConstructorTranslation.sml
+  ClosureConversionFun.sml
