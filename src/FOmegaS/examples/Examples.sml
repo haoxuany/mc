@@ -3,13 +3,6 @@ structure Examples = struct
   structure Helpers = struct
     open FOmegaS
     open Abt
-    structure Print = PrintFun(
-      structure Abt = Abt
-      structure ExternalPrinter = struct
-        type t = unit
-        fun print _ _ = ()
-      end
-    )
     open Print
 
     val newvar = Variable.new

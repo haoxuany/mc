@@ -1,7 +1,6 @@
 Library
   structure Cps
   signature CPS
-  functor PrintFun
 is
   ../../cmlib/cmlib.cm
   sources.cm

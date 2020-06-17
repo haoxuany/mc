@@ -1,26 +1,22 @@
 
-functor HeadPrinterFun(
-  structure ExternalPrinter : EXTERNALPRINTER
-)= struct
+structure HeadPrinter = struct
 
-  datatype 'a t =
-    Head of string * 'a t list
+  datatype t =
+    Head of string * t list
   | Int of int
   | Raw of string
-  | Other of 'a
-  | List of 'a t list
+  | List of t list
 
   val head = fn s => fn l => Head (s, l)
   val int = fn i => Int i
   val raw = fn s => Raw s
   val list = fn l => List l
-  val other = fn m => Other m
 
   local open PrettyPrint in
 
   val print =
     fn (outstream : TextIO.outstream) =>
-    fn (p : ExternalPrinter.t t) =>
+    fn (p : t) =>
   let
     val stream = makeStream outstream 0
 
@@ -35,7 +31,6 @@ functor HeadPrinterFun(
         end
       | Int i => print stream (Int.toString i)
       | Raw s => print stream s
-      | Other a => ExternalPrinter.print stream a
       | List l => let
           val () = openBox stream Freestyle 2
           val () = print stream "["

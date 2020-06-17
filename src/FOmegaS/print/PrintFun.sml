@@ -1,15 +1,11 @@
 
 functor PrintFun(
   structure Abt : ABT
-  structure ExternalPrinter : EXTERNALPRINTER
-) = struct
+) : PRINT = struct
   open Abt
   val vp = Variable.print
 
-  structure Printer = HeadPrinterFun(
-    structure ExternalPrinter = ExternalPrinter
-  )
-  open Printer
+  open HeadPrinter
 
   local
   fun sk kind =

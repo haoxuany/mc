@@ -20,6 +20,7 @@ Library
   signature RUN
   functor RunFun
 
+  signature PRINT
   functor PrintFun
 is
   ../../cmlib/cmlib.cm
@@ -44,4 +45,5 @@ is
   run/RUN.sml
   run/RunFun.sml
 
+  print/PRINT.sml
   print/PrintFun.sml

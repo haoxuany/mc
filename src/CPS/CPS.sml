@@ -14,4 +14,6 @@ signature CPS = sig
   structure TypeCheck : TYPECHECK
   (* Single step dynamics *)
   structure Run : RUN
+  (* Printing *)
+  structure Print : PRINT
 end

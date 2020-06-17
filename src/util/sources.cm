@@ -2,8 +2,7 @@ Library
   signature VARIABLE
   structure Variable
   structure ParList
-  functor HeadPrinterFun
-  signature EXTERNALPRINTER
+  structure HeadPrinter
 is
   ../../cmlib/cmlib.cm
 
@@ -13,5 +12,4 @@ is
 
   ParList.sml
 
-  EXTERNALPRINTER.sml
-  HeadPrinterFun.sml
+  HeadPrinter.sml

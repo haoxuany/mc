@@ -25,4 +25,7 @@ structure FOmegaS = struct
     structure Abt = Abt
     structure Subst = Subst
   )
+  structure Print = PrintFun(
+    structure Abt = Abt
+  )
 end
