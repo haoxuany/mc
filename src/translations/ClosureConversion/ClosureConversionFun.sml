@@ -134,7 +134,7 @@ functor ClosureConversionFun(
               Value_tuple nil,
               Value_lam (
                 y, (* : env0 * ti *)
-                Type_product [unitty, ti],
+                Type_product [unitty, translateCon ti],
                 Exp_proj (
                   Value_var y,
                   1,
@@ -286,7 +286,7 @@ functor ClosureConversionFun(
       Exp_app (v, v') => let
         val (v, _, _) = translateValue ctx v
         (* where not t2 => exists env :: T. env * (not (env * u2)) *)
-        val (v', t2, u2) = translateValue ctx v
+        val (v', t2, u2) = translateValue ctx v'
 
         val x = new () (* : env * (not (env * u2)) *)
         val env = new () (* : env *)
