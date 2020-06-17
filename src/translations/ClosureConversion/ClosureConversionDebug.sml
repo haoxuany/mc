@@ -1,4 +1,4 @@
 
-structure ClosureConversionDebug = ClosureConversionFun(
+structure ClosureConversion = ClosureConversionFun(
   structure DebugTranslation = DebugTranslation
 )

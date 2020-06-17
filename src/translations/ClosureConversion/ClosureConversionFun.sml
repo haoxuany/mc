@@ -4,6 +4,7 @@ functor ClosureConversionFun(
 ) = struct
   open ClosureConversionConstructorTranslation
   open FreeVars
+  structure DebugTranslation = DebugTranslation
   open DebugTranslation
 
   val new = Variable.new
@@ -370,6 +371,8 @@ functor ClosureConversionFun(
          translateExp (extendType ctx x t) e)
      in result end
      debug "let"
+
+   | Exp_exit _ => fullexp debug "exit"
 
   in result end
 end

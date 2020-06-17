@@ -1,9 +1,9 @@
 
 structure Driver = struct
-  open CpsConversion
-
-  structure S = FOmegaS.Abt
-  structure T = Cps.Abt
+  structure SLang = FOmegaS
+  structure S = SLang.Abt
+  structure TLang = Cps
+  structure T = TLang.Abt
 
   local
    open S
@@ -60,11 +60,42 @@ structure Driver = struct
     end
   end
 
+  val source = example_istrueunpack
+
+  local
+    open CpsConversion
+    open T
+  in
+
   val k = newvar ()
   val kexn = newvar ()
   val (result, tau, tau') = translateTerm
     (DebugTranslation.emptyCtx ())
-    example_istrueunpack
+    source
     k
     kexn
+
+  val x = newvar ()
+  val y = newvar ()
+  val program = Exp_let (
+    Value_lam (x, tau', Exp_exit 0),
+    k,
+    Exp_let (
+      Value_lam (y, Type_exn, Exp_exit 1),
+      kexn,
+      result
+    )
+  )
+  val () = TLang.TypeCheck.typeExpCheck (TLang.Context.new ()) program
+  end
+
+  local
+    open ClosureConversion
+    open T
+  in
+    val program = translateExp
+      (DebugTranslation.emptyCtx ())
+      program
+  val () = TLang.TypeCheck.typeExpCheck (TLang.Context.new ()) program
+  end
 end

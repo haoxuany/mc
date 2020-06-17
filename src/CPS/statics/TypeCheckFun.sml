@@ -118,4 +118,5 @@ functor TypeCheckFun(
          | _ => raise TypeError)
     | Exp_let (v, x, e) =>
         typeExpCheck (extendType ctx x (typeValueSynth ctx v)) e
+    | Exp_exit _ => ()
 end

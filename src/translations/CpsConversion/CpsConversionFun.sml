@@ -8,6 +8,7 @@ functor CpsConversionFun(
   structure T = TLang.Abt
 
   open CpsConstructorTranslation
+  structure DebugTranslation = DebugTranslation
   open DebugTranslation
 
   val new = Variable.new

@@ -1,6 +1,5 @@
 Library
   structure CpsConversion
-  structure DebugTranslation
 is
   ../../../cmlib/cmlib.cm
   ../../util/sources.cm

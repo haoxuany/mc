@@ -1,5 +1,5 @@
 Library
-  structure ClosureConversionDebug
+  structure ClosureConversion
 is
   ../../../cmlib/cmlib.cm
   ../../util/sources.cm

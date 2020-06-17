@@ -50,5 +50,6 @@ functor FreeVarsFun(
         (freeVarsValue v) ++ ((freeVarsExp e) // x)
     | Exp_let (v, x, e) =>
         (freeVarsValue v) ++ ((freeVarsExp e) // x)
+    | Exp_exit _ => empty
   end
 end

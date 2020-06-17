@@ -71,6 +71,7 @@ functor PrintFun(
         head "unfold" [sv v, raw (vp x), se e]
     | Exp_let (v, x, e) =>
         head "let" [sv v, raw (vp x), se e]
+    | Exp_exit i => head "exit" [int i]
   in
 
   val serializeKind = sk

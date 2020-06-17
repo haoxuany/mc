@@ -49,4 +49,5 @@ functor AbtFun(
   | Exp_case of value * (var * exp) list
   | Exp_unfold of value * var * exp
   | Exp_let of value * var * exp
+  | Exp_exit of int
 end
