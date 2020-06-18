@@ -27,13 +27,6 @@ functor ClosureConversionFun(
       | Value_fixlam lams => let
         (* <not t1, not t2, ..., not tn>
         * => exists env :: T. env * <not (env * t1), ..., not (env * tn)> *)
-          val (ctx, tys) = List.foldr
-            (fn ((f, _, c, _), (ctx, tys)) => let
-              val notc = Type_not c
-            in (extendType ctx f notc, notc :: tys) end)
-            (ctx, nil)
-            lams
-
           val free = VarSet.toList (freeVarsValue fullvalue)
           val freeTys = Type_product (ParList.map
             (fn x => translateCon (lookupType ctx x))
@@ -42,6 +35,15 @@ functor ClosureConversionFun(
             List.tabulate (List.length free, fn i => i),
             free
           )
+          val free = Value_tuple (ParList.map Value_var free)
+
+          val (ctx, tys, fbnds) = List.foldr
+            (fn ((f, _, c, _), (ctx, tys, fbnds)) => let
+              val notc = Type_not c
+              val f' = new () (* not (env * c) *)
+            in (extendType ctx f notc, notc :: tys, (f, f') :: fbnds) end)
+            (ctx, nil, nil)
+            lams
 
           val (lams, t') = ListPair.unzip (ParList.map
             (fn (f, x, c, e) => let
@@ -85,6 +87,35 @@ functor ClosureConversionFun(
             ) end)
             lams)
 
+          val rebindFixpoints = fn e => ParList.foldr
+            (fn (((f, f'), ty), e) =>
+              (* assume f' : (not (env * ui)) *)
+              Exp_let (
+                Value_pack (
+                  freeTys,
+                  Value_tuple [
+                    free,
+                    Value_var f'
+                  ],
+                  Type_exists (
+                    Kind_type,
+                    Type_product
+                      [Con_var 0,
+                      (* this is already lifted in the previous function *)
+                      ty]
+                  )
+                ),
+                f, (* : exists env :: T. env * (not (env * ui)) *)
+                e
+              ))
+            e
+            (ListPair.zip (fbnds, t'))
+
+          val lams = ParList.map
+            (fn ((_, x, c, e), (_, f')) => (f', x, c, rebindFixpoints e))
+            (ListPair.zip (lams, fbnds))
+
+          val tau = Type_productfix tys
           val tau' = Type_exists (
             Kind_type,
             Type_product [
@@ -95,12 +126,11 @@ functor ClosureConversionFun(
           val result = Value_pack (
             freeTys,
             Value_tuple [
-              Value_tuple (ParList.map Value_var free),
+              free,
               Value_fixlam lams
             ],
             tau'
           )
-          val tau = Type_productfix tys
         in (result, tau, tau') end
         debug "fixlam"
 

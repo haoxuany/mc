@@ -22,6 +22,38 @@ structure Driver = struct
       ]
     end
 
+    val example_unitapp = let
+      val f = newvar ()
+      val x = newvar ()
+    in
+      Term_app (
+        Term_pick (
+          Term_fixlam [
+            (f, x, Type_product nil,
+            Term_var x, Type_product nil)
+          ],
+          0
+        ),
+        Term_tuple nil
+      )
+    end
+
+    val example_divergefix = let
+      val f = newvar ()
+      val x = newvar ()
+    in
+      Term_app (
+        Term_pick (
+          Term_fixlam [
+            (f, x, Type_product nil,
+            Term_app (Term_var f, Term_var x), Type_product nil)
+          ],
+          0
+        ),
+        Term_tuple nil
+      )
+    end
+
     val bool = Type_sum [Type_product [], Type_product []];
     val un = Term_tuple []
     val tt = Term_inj (bool, 0, un)
@@ -58,14 +90,35 @@ structure Driver = struct
           (Term_pick (Term_proj (Term_var x, 1), 0),
           Term_proj (Term_var x, 0)))
     end
+
+    val example_fixpoint = let
+      val f = newvar ()
+      val y = newvar ()
+      val a = newvar ()
+      val b = newvar ()
+      val temp = newvar ()
+    in
+      Term_let (
+      Term_fixlam
+        [(f, y, bool,
+          Term_case (Term_var y,
+            [(a, tt), (b, Term_app (Term_var f, tt))]), bool)],
+      temp,
+      Term_app (Term_pick (Term_var temp, 0), ff)
+      )
+    end
   end
 
-  val source = example_istrueunpack
+  val source = example_fixpoint
 
   local
     open CpsConversion
     open T
   in
+
+  val () = TextIO.print "fomega:\n"
+  val () = SLang.Print.printTerm source
+  val () = TextIO.print "\n\n\n"
 
   val k = newvar ()
   val kexn = newvar ()
@@ -74,6 +127,8 @@ structure Driver = struct
     source
     k
     kexn
+
+  val () = SLang.TypeCheck.typeCheck (SLang.Context.new ()) source tau
 
   val x = newvar ()
   val y = newvar ()
@@ -87,15 +142,23 @@ structure Driver = struct
     )
   )
   val () = TLang.TypeCheck.typeExpCheck (TLang.Context.new ()) program
+
+  val () = TextIO.print "cps:\n"
+  val () = TLang.Print.printExp program
+  val () = TextIO.print "\n\n\n"
   end
 
   local
     open ClosureConversion
     open T
   in
-    val program = translateExp
-      (DebugTranslation.emptyCtx ())
-      program
+  val program = translateExp
+    (DebugTranslation.emptyCtx ())
+    program
   val () = TLang.TypeCheck.typeExpCheck (TLang.Context.new ()) program
+
+  val () = TextIO.print "closure:\n"
+  val () = TLang.Print.printExp program
+  val () = TextIO.print "\n\n\n"
   end
 end
