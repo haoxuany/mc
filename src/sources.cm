@@ -1,9 +1,10 @@
 Group is
   ../cmlib/cmlib.cm
 
-  translations/CpsConversion/cps.cm
-  translations/CpsConversion/fomegas.cm
-  translations/CpsConversion/sources.cm
+  FOmegaS/release.cm
+  CPS/release.cm
 
+  translations/CpsConversion/sources.cm
   translations/ClosureConversion/sources.cm
+
   Driver.sml

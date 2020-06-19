@@ -1,5 +1,0 @@
-Library
-  structure Cps
-  signature CPS
-is
-  ../../CPS/release.cm

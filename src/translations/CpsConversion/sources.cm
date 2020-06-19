@@ -3,8 +3,9 @@ Library
 is
   ../../../cmlib/cmlib.cm
   ../../util/sources.cm
-  cps.cm
-  fomegas.cm
+
+  ../../FOmegaS/release.cm
+  ../../CPS/release.cm
 
   CpsConstructorTranslation.sml
 

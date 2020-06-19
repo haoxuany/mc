@@ -3,7 +3,8 @@ Library
 is
   ../../../cmlib/cmlib.cm
   ../../util/sources.cm
-  cps.cm
+
+  ../../CPS/release.cm
 
   DEBUGTRANSLATION.sml
   DebugTranslation.sml

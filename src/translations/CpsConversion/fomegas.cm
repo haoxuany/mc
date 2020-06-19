@@ -1,5 +1,0 @@
-Library
-  structure FOmegaS
-  signature FOMEGAS
-is
-  ../../FOmegaS/release.cm
