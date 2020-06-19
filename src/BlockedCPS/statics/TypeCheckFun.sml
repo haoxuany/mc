@@ -155,7 +155,9 @@ functor TypeCheckFun(
   (* ctx |> p : 0 *)
   and typeProgramCheck ctx program =
     case program of
-      Program_dyn e => typeExpCheck ctx e
-    | Program_bnd (b, x, p) =>
-        typeProgramCheck (extendType ctx x (typeBlockSynth ctx b)) p
+      Program (bnds, e) =>
+        typeExpCheck (ParList.foldr
+          (fn ((x, b), ctx') => extendType ctx' x (typeBlockSynth ctx b))
+          ctx bnds)
+          e
 end

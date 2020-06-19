@@ -288,29 +288,26 @@ functor SubstFun(
   and substConInProgram shifts cons n lifts program = let
     val substExp = substConInExp shifts cons n lifts
     val substBlock = substConInBlock shifts cons n lifts
-    val substProgram = substConInProgram shifts cons n lifts
 
     val program = case program of
-        Program_dyn e => Program_dyn (substExp e)
-      | Program_bnd (b, x, p) =>
-          Program_bnd (substBlock b, x, substProgram p)
+        Program (bnds, e) =>
+          Program (ParList.map (fn (x, b) => (x, substBlock b)) bnds, substExp e)
   in program end
 
   and substConValueInProgram shifts cons n lifts dict program = let
     val substExp = substConValueInExp shifts cons n lifts
     val substBlock = substConValueInBlock shifts cons n lifts
-    val substProgram = substConValueInProgram shifts cons n lifts
-
-    fun alphaNew x = let
-      val y = Variable.new ()
-      val dict = Dict.insert dict x (Value_var y)
-    in (y, dict) end
 
     val program = case program of
-        Program_dyn e => Program_dyn (substExp dict e)
-      | Program_bnd (b, x, p) => let
-          val (y, dictA) = alphaNew x
-        in Program_bnd (substBlock dict b, y, substProgram dictA p) end
+        Program (bnds, e) => let
+          val (bnds, dictA) = ParList.foldr
+            (fn ((x, b), (bnds, dictA)) => let
+              val y = Variable.new ()
+              val dictA = Dict.insert dictA x (Value_var y)
+            in ((y, substBlock dict b) :: bnds, dictA) end)
+            (nil, dict)
+            bnds
+        in Program (bnds, substExp dictA e) end
   in program end
 
 

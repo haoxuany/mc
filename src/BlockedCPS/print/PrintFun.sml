@@ -83,9 +83,9 @@ functor PrintFun(
 
   and sp program =
     case program of
-      Program_dyn e => se e
-    | Program_bnd (b, x, p) =>
-        head "let" [sb b, raw (vp x), sp p]
+      Program (bnds, e) =>
+        list ((ParList.map
+          (fn (x, b) => head "bnd" [raw (vp x), sb b]) bnds) @ [se e])
   in
 
   val serializeKind = sk

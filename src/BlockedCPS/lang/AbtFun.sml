@@ -57,6 +57,5 @@ functor AbtFun(
   | Block_polylam of kind * block
 
   and program =
-    Program_dyn of exp
-  | Program_bnd of block * var * program
+    Program of (var * block) list * exp
 end
