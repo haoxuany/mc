@@ -1,0 +1,10 @@
+Library
+  structure BlockedCps
+  signature BLOCKEDCPS
+is
+  ../../cmlib/cmlib.cm
+  sources.cm
+  ../util/sources.cm
+
+  BLOCKEDCPS.sml
+  BlockedCps.sml
