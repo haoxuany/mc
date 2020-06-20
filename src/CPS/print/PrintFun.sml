@@ -18,7 +18,7 @@ functor PrintFun(
 
   and sc con =
    case con of
-     Type_not c => head "not" [sc c]
+     Type_not c => head "not" (ParList.map sc c)
    | Type_productfix cons => head "*" (ParList.map sc cons)
    | Type_exists (k, c) => head "exists" [sk k, sc c]
    | Type_product cons => head "*" (ParList.map sc cons)
@@ -37,13 +37,18 @@ functor PrintFun(
     case value of
       Value_var i => raw (vp i)
     | Value_fixlam lams =>
-        head "fix" (ParList.map (fn (f, x, c, e) =>
-          head "fn" [raw (vp f), raw (vp x), sc c, se e])
+        head "fix" (ParList.map (fn (f, bnds, e) =>
+          head "fn" [raw (vp f),
+            list (List.concat
+              (ParList.map (fn (x, c) => [raw (vp x), sc c]) bnds)),
+            se e])
           lams)
     | Value_pick (v, i) =>
         head "pick" [sv v, int i]
-    | Value_lam (i, c, e) =>
-        head "fn" [raw (vp i), sc c, se e]
+    | Value_lam (bnds, e) =>
+        head "fn" [ list (List.concat
+          (ParList.map (fn (x, c) => [raw (vp x), sc c]) bnds)),
+          se e]
     | Value_pack (c, v, c') =>
         head "pack" [sc c, sv v, sc c]
     | Value_tuple vals =>
@@ -55,7 +60,7 @@ functor PrintFun(
 
   and se exp =
     case exp of
-      Exp_app (v, v') => head "app" [sv v, sv v']
+      Exp_app (v, v') => head "app" [sv v, list (ParList.map sv v')]
     | Exp_unpack (v, x, e) =>
         head "unpack" [sv v, raw (vp x), se e]
     | Exp_proj (v, i, x, e) =>

@@ -30,20 +30,22 @@ structure CpsConstructorTranslation = struct
     | S.Con_unit => T.Con_unit
 
     | S.Type_arrow (c, c') =>
-        T.Type_not (T.Type_product [
+        T.Type_not [
           translateCon c, (* input *)
-          T.Type_not (translateCon c'), (* continuation for the result *)
-          T.Type_not T.Type_exn (* continuation if function throws exception *)
-        ])
+          T.Type_not [translateCon c'], (* continuation for the result *)
+          T.Type_not [T.Type_exn] (* continuation if function throws exception *)
+        ]
     | S.Type_productfix cons => T.Type_productfix (ParList.map translateCon cons)
     | S.Type_forall (k, c) =>
-        T.Type_not (T.Type_exists (
-          translateKind k, (* input *)
-          T.Type_product [
-            T.Type_not (translateCon c), (* continuation for the result *)
-            T.Type_not T.Type_exn (* continuation if expression throw exception *)
-          ]
-        ))
+        T.Type_not [
+          T.Type_exists (
+            translateKind k, (* input *)
+            T.Type_product [
+              T.Type_not [translateCon c], (* continuation for the result *)
+              T.Type_not [T.Type_exn] (* continuation if expression throw exception *)
+            ]
+          )
+        ]
     | S.Type_exists (k, c) => T.Type_exists (translateKind k, translateCon c)
     | S.Type_product tys => T.Type_product (ParList.map translateCon tys)
     | S.Type_sum tys => T.Type_sum (ParList.map translateCon tys)

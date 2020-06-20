@@ -133,10 +133,10 @@ structure Driver = struct
   val x = newvar ()
   val y = newvar ()
   val program = Exp_let (
-    Value_lam (x, tau', Exp_exit 0),
+    Value_lam ([(x, tau')], Exp_exit 0),
     k,
     Exp_let (
-      Value_lam (y, Type_exn, Exp_exit 1),
+      Value_lam ([(y, Type_exn)], Exp_exit 1),
       kexn,
       result
     )

@@ -61,8 +61,8 @@ structure DebugTranslation : DEBUGTRANSLATION = struct
       "translated program typechecks"
       (fn () => TLang.TypeCheck.typeExpCheck
         (TLang.Context.extendType
-          (TLang.Context.extendType (#2 ctx) k (T.Type_not tty))
-          kexn (T.Type_not T.Type_exn))
+          (TLang.Context.extendType (#2 ctx) k (T.Type_not [tty]))
+          kexn (T.Type_not [T.Type_exn]))
         texp)
   in () end
 end

@@ -1,0 +1,16 @@
+Library
+  structure HoistingConstructorTranslation
+is
+  ../../../cmlib/cmlib.cm
+  ../../util/sources.cm
+
+  ../../CPS/release.cm
+  ../../BlockedCPS/release.cm
+
+  HoistingConstructorTranslation.sml
+
+  DEBUGTRANSLATION.sml
+  DebugTranslation.sml
+
+  HoistingFun.sml
+  HoistingDebug.sml

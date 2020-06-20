@@ -19,13 +19,17 @@ functor FreeVarsFun(
       Value_var v => singleton v
     | Value_fixlam lams => let
         val (free, fs) = ParList.foldr
-          (fn ((f, x, _, e), (free, fs)) =>
-            (free ++ ((freeVarsExp e) // x), insert fs f))
+          (fn ((f, bnds, e), (free, fs)) =>
+            (free ++ (difference
+              (freeVarsExp e)
+              (ParList.foldr (fn ((x, _), bnds) => insert bnds x) empty bnds)),
+            insert fs f))
           (empty, empty)
           lams
       in difference free fs end
     | Value_pick (v, _) => freeVarsValue v
-    | Value_lam (v, _, e) => (freeVarsExp e) // v
+    | Value_lam (bnds, e) => difference (freeVarsExp e)
+        (ParList.foldr (fn ((x, _), bnds) => insert bnds x) empty bnds)
     | Value_pack (_, v, _) => freeVarsValue v
     | Value_tuple vs => ParList.foldr
         (fn (v, free) => free ++ (freeVarsValue v))
@@ -35,7 +39,10 @@ functor FreeVarsFun(
     | Value_fold (_, v) => freeVarsValue v
   and freeVarsExp e =
     case e of
-      Exp_app (v, v') => (freeVarsValue v) ++ (freeVarsValue v')
+      Exp_app (v, vs') => ParList.foldr
+        (fn (v, free) => (freeVarsValue v) ++ free)
+        (freeVarsValue v)
+        vs'
     | Exp_unpack (v, x, e) =>
         (freeVarsValue v) ++ ((freeVarsExp e) // x)
     | Exp_proj (v, _, x, e) =>

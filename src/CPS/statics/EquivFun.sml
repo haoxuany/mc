@@ -127,8 +127,8 @@ functor EquivFun(
    (* all the annoying base cases that just return the singleton of itself *)
    (* we also make an extra check for constructor validity, because the type
    * can be technically malformed *)
-   | Type_not c =>
-       (kindCheck ctx c Kind_type;
+   | Type_not cs =>
+       (ParList.map (fn c => kindCheck ctx c Kind_type) cs;
        Kind_singleton allc)
    | Type_productfix tys =>
        (ParList.map (fn c => kindCheck ctx c Kind_type) tys;
@@ -278,8 +278,9 @@ functor EquivFun(
     * nevertheless adding this anyway *)
     | (Con_unit, Con_unit) => Kind_unit
     (* the rest are the annoying and unilluminating constant cases *)
-    | (Type_not c, Type_not c') =>
-        (conEquiv ctx c c' Kind_type;
+    | (Type_not cs, Type_not cs') =>
+        (ParList.map (fn (c, c') => conEquiv ctx c c' Kind_type)
+          (ListPair.zip (cs, cs'));
         Kind_type)
     | (Type_productfix tys, Type_productfix tys') =>
         (* TODO: a parallel version of listpair would be nice *)

@@ -31,15 +31,14 @@ structure ClosureConversionConstructorTranslation = struct
     | Con_proj1 c => Con_proj1 (translateCon c)
     | Con_proj2 c => Con_proj2 (translateCon c)
     | Con_unit => Con_unit
-    | Type_not c => Type_exists (
+    | Type_not cs => Type_exists (
         Kind_type,
         Type_product [
           Con_var 0, (* environment *)
           Type_not (
-            Type_product [
-              Con_var 0,
-              substInCon 0 nil 1 (translateCon c)
-            ]
+            (ParList.map (fn c => substInCon 0 nil 1 (translateCon c)) cs)
+            (* this need to be appended to make sure that previous projections work correctly *)
+            @ [Con_var 0]
           )
         ]
       )
@@ -53,11 +52,10 @@ structure ClosureConversionConstructorTranslation = struct
           Type_productfix (ParList.map
             (fn c =>
               case c of
-                Type_not c => Type_not (
-                  Type_product [
-                    Con_var 0,
-                    substInCon 0 nil 1 (translateCon c)
-                  ]
+                Type_not cs => Type_not (
+                  (ParList.map (fn c => substInCon 0 nil 1 (translateCon c)) cs)
+                  (* this need to be appended to make sure that previous projections work correctly *)
+                  @ [Con_var 0]
                 )
               | _ => raise TypeError)
             cons)

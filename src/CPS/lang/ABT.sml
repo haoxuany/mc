@@ -13,7 +13,7 @@ signature ABT = sig
 
   and con =
     (* types *)
-    Type_not of con
+    Type_not of con list
   | Type_productfix of con list
   | Type_exists of kind * con
   | Type_product of con list
@@ -32,16 +32,16 @@ signature ABT = sig
 
   and value =
     Value_var of var
-  | Value_fixlam of (var * var * con * exp) list
+  | Value_fixlam of (var * (var * con) list * exp) list
   | Value_pick of value * int
-  | Value_lam of var * con * exp
+  | Value_lam of (var * con) list * exp
   | Value_pack of con * value * con
   | Value_tuple of value list
   | Value_inj of con * int * value
   | Value_fold of con * value
 
   and exp =
-    Exp_app of value * value
+    Exp_app of value * value list
   | Exp_unpack of value * var * exp
   | Exp_proj of value * int * var * exp
   | Exp_case of value * (var * exp) list

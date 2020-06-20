@@ -32,7 +32,7 @@ functor CpsConversionFun(
 
       S.Term_var x => let
         val tau = lookupType ctx x
-        val result = T.Exp_app (T.Value_var k, T.Value_var x)
+        val result = T.Exp_app (T.Value_var k, [T.Value_var x])
         val tau' = translateCon tau
       in (result, tau, tau') end
       debug "var"
@@ -50,7 +50,7 @@ functor CpsConversionFun(
         val result =
           T.Exp_let (
             T.Value_lam (
-              x, u,
+              [(x, u)],
               f'
             ),
             k', (* not u *)
@@ -74,39 +74,26 @@ functor CpsConversionFun(
             val kexn' = new ()
             val (e', _, u') = translateTerm (extendType ctx x t) e k' kexn'
 
-            val y = new () (* u * not u' * not exn *)
-            val ytau = T.Type_product [u, T.Type_not u', T.Type_not T.Type_exn]
-            val lam =
-              (* lam y : ytau. *)
-              T.Exp_proj (
-                T.Value_var y, 0,
-                x, (* : u *)
-                T.Exp_proj (
-                  T.Value_var y, 1,
-                  k', (* : not u' *)
-                  T.Exp_proj (
-                    T.Value_var y, 2,
-                    kexn',
-                    e'
-                  )
-                )
-              )
+            val y = [x, k', kexn']
+            val ytau = [u, T.Type_not [u'], T.Type_not [T.Type_exn]]
+
             val tau = S.Type_arrow (t, t')
             val tau' = T.Type_not ytau
-          in (f, y, ytau, lam, tau, tau') end)
+          in (f, (ListPair.zip (y, ytau)), e', tau, tau') end)
           lams
 
         val (result, tau, tau') = List.foldr
-          (fn ((f, x, c, e, tau, tau'), (lam, taus, tau's)) =>
-            ((f, x, c, e) :: lam, tau :: taus, tau' :: tau's))
+          (fn ((f, bnds, e, tau, tau'), (lam, taus, tau's)) =>
+            ((f, bnds, e) :: lam, tau :: taus, tau' :: tau's))
           (nil, nil, nil)
           fixlam
 
-        val result = T.Exp_app (T.Value_var k, T.Value_fixlam result)
+        val result = T.Exp_app (T.Value_var k, [T.Value_fixlam result])
         val tau = S.Type_productfix tau
         val tau' = T.Type_productfix tau'
       in (result, tau, tau') end
       debug "fixlam"
+
     | S.Term_pick (e, i) => let
         val k' = new () (* : not productfix [...] *)
         val (e', t, u) = translateTerm ctx e k' kexn
@@ -114,8 +101,8 @@ functor CpsConversionFun(
         val x = new () (* : productfix [...] *)
         val result = T.Exp_let (
           T.Value_lam (
-            x, u,
-            T.Exp_app (T.Value_var k, T.Value_pick (T.Value_var x, i))
+            [(x, u)],
+            T.Exp_app (T.Value_var k, [T.Value_pick (T.Value_var x, i)])
           ),
           k',
           e'
@@ -149,13 +136,13 @@ functor CpsConversionFun(
         val y = new () (* : u1 *)
         val result = T.Exp_let (
           T.Value_lam (
-            x, u1', (* not (u1 * not u2 * not exn) *)
+            [(x, u1')], (* not (u1 * not u2 * not exn) *)
             T.Exp_let (
               T.Value_lam (
-                y, u1, (* u1 *)
+                [(y, u1)], (* u1 *)
                 T.Exp_app (
                   T.Value_var x,
-                  T.Value_tuple [
+                  [
                     T.Value_var y,
                     T.Value_var k,
                     T.Value_var kexn
@@ -189,13 +176,13 @@ functor CpsConversionFun(
         val x = new () (* : exists a : kind. not u * not exn *)
         val xty = T.Type_exists
           (translateKind kind,
-          T.Type_product [T.Type_not u, T.Type_not T.Type_exn])
+          T.Type_product [T.Type_not [u], T.Type_not [T.Type_exn]])
         val y = new () (* : not u * not exn given a : kind *)
 
         val result = T.Exp_app (
           T.Value_var k, (* : not not (exists a : kind. not u * not exn) *)
-          T.Value_lam (
-            x, xty,
+          [T.Value_lam (
+            [(x, xty)],
             T.Exp_unpack (
               T.Value_var x,
               y, (* : not u * not exn given a : kind *)
@@ -211,9 +198,9 @@ functor CpsConversionFun(
                 )
               )
             )
-          )
+          )]
         )
-        val tau' = T.Type_not xty
+        val tau' = T.Type_not [xty]
       in (result, tau, tau') end
       debug "polylam"
 
@@ -230,18 +217,18 @@ functor CpsConversionFun(
         val x = new () (* : not (exists a : kind. not u * not exn) *)
         val result = T.Exp_let (
           T.Value_lam (
-            x, u',
+            [(x, u')],
             T.Exp_app (
               T.Value_var x,
-              T.Value_pack (translateCon c,
+              [T.Value_pack (translateCon c,
                 T.Value_tuple [T.Value_var k, T.Value_var kexn],
                 T.Type_exists (translateKind kind,
                   T.Type_product [
-                    T.Type_not (translateCon t),
-                    T.Type_not T.Type_exn
+                    T.Type_not [translateCon t],
+                    T.Type_not [T.Type_exn]
                   ]
                 )
-              )
+              )]
             )
           ),
           k', (* : not not (exists a : kind. not u * not exn) *)
@@ -263,14 +250,14 @@ functor CpsConversionFun(
         val x = new () (* : u *)
         val result = T.Exp_let (
           T.Value_lam (
-            x, u,
+            [(x, u)],
             T.Exp_app (
               T.Value_var k, (* : not tau' *)
-              T.Value_pack (
+              [T.Value_pack (
                 translateCon c,
                 T.Value_var x,
                 tau'
-              )
+              )]
             )
           ),
           k', (* : not u *)
@@ -295,7 +282,7 @@ functor CpsConversionFun(
         val y = new () (* : u *)
         val result = T.Exp_let (
           T.Value_lam (
-            y, u,
+            [(y, u)],
             T.Exp_unpack (
               T.Value_var y,
               x,
@@ -321,13 +308,13 @@ functor CpsConversionFun(
 
         fun process translations bindings =
           case translations of
-            nil => T.Exp_app (T.Value_var k, T.Value_tuple (List.rev bindings))
+            nil => T.Exp_app (T.Value_var k, [T.Value_tuple (List.rev bindings)])
           | (ei', ti, ui, ki) :: rest =>
               let
                 val xi = new () (* : ui *)
               in T.Exp_let (
                 T.Value_lam (
-                  xi, ui,
+                  [(xi, ui)],
                   process rest ((T.Value_var xi) :: bindings)
                 ),
                 ki, (* not ui *)
@@ -358,12 +345,12 @@ functor CpsConversionFun(
         val y = new () (* : tau' *)
         val result = T.Exp_let (
           T.Value_lam (
-            x, u,
+            [(x, u)],
             T.Exp_proj (
               T.Value_var x,
               i,
               y,
-              T.Exp_app (T.Value_var k, T.Value_var y)
+              T.Exp_app (T.Value_var k, [T.Value_var y])
             )
           ),
           k', (* not u *)
@@ -383,10 +370,10 @@ functor CpsConversionFun(
         val x = new () (* u *)
         val result = T.Exp_let (
           T.Value_lam (
-            x, u,
+            [(x, u)],
             T.Exp_app (
               T.Value_var k, (* not tau' *)
-              T.Value_inj (tau', i, T.Value_var x)
+              [T.Value_inj (tau', i, T.Value_var x)]
             )
           ),
           k', (* : not u *)
@@ -413,7 +400,7 @@ functor CpsConversionFun(
         val x = new () (* : u *)
         val result = T.Exp_let (
           T.Value_lam (
-            x, u,
+            [(x, u)],
             T.Exp_case (
               T.Value_var x,
               ParList.map
@@ -440,8 +427,8 @@ functor CpsConversionFun(
         val x = new () (* : uunfolded *)
         val result = T.Exp_let (
           T.Value_lam (
-            x, uunfolded,
-            T.Exp_app (T.Value_var k, T.Value_fold (u, T.Value_var x))
+            [(x, uunfolded)],
+            T.Exp_app (T.Value_var k, [T.Value_fold (u, T.Value_var x)])
           ),
           k', (* : not uunfolded *)
           e'
@@ -468,11 +455,11 @@ functor CpsConversionFun(
         val y = new () (* : uunfolded *)
         val result = T.Exp_let (
           T.Value_lam (
-            x, u,
+            [(x, u)],
             T.Exp_unfold (
               T.Value_var x,
               y, (* : uunfolded *)
-              T.Exp_app (T.Value_var k, T.Value_var y)
+              T.Exp_app (T.Value_var k, [T.Value_var y])
             )
           ),
           k', (* : not u *)

@@ -33,7 +33,7 @@ functor SubstFun(
 
     val con =
       case c of
-        Type_not c => Type_not (substCon c)
+        Type_not cs => Type_not (ParList.map substCon cs)
       | Type_productfix tys =>
           Type_productfix $ ParList.map substCon tys
       | Type_exists (k, c') =>
@@ -100,14 +100,18 @@ functor SubstFun(
     val value = case value of
         Value_var v => value
       | Value_fixlam lams =>
-          Value_fixlam (ParList.map
-            (fn (f, x, c, e) => (f, x, substCon c, substExp e))
-            lams)
+          Value_fixlam (ParList.map (fn (f, bnds, e) =>
+            (f,
+            ParList.map (fn (x, c) => (x, substCon c)) bnds,
+            substExp e)
+          ) lams)
       | Value_pick (v, i) =>
           Value_pick (substValue v, i)
-      | Value_lam (v, c, e) =>
-          (* only variable binder here, no debruijn binder *)
-          Value_lam (v, substCon c, substExp e)
+      | Value_lam (bnds, e) =>
+          Value_lam (
+            ParList.map (fn (x, c) => (x, substCon c)) bnds,
+            substExp e
+          )
       | Value_pack (c, v, c') =>
           Value_pack (substCon c, substValue v, substCon c')
       | Value_tuple vals =>
@@ -146,23 +150,34 @@ functor SubstFun(
                else substConInValue 0 nil 0 shifts v)
       | Value_fixlam lams => let
           val (fs, dict) = List.foldr
-          (fn ((f, _, _, _), (fs, dict)) => let
+          (fn ((f, _, _), (fs, dict)) => let
             val f' = Variable.new ()
             val dict = Dict.insert dict f (Value_var f')
           in (f' :: fs, dict) end)
           (nil, dict)
           lams
         in Value_fixlam (ParList.map
-          (fn ((_, x, c, e), f) => let
-            val y = Variable.new ()
-            val dict = Dict.insert dict x (Value_var y)
-          in (f, y, substCon c, substExp dict e) end)
+          (fn ((_, bnds, e), f) => let
+            val (bnds, dict) = List.foldr
+              (fn ((x, c), (bnds, dict)) => let
+                val y = Variable.new ()
+                val dict = Dict.insert dict x (Value_var y)
+              in ((y, substCon c) :: bnds, dict) end)
+              (nil, dict)
+              bnds
+          in (f, bnds, substExp dict e) end)
           (ListPair.zip (lams, fs))) end
       | Value_pick (v, i) =>
           Value_pick (substValue dict v, i)
-      | Value_lam (v, c, t) => let
-          val (v, dictA) = alphaNew v
-        in Value_lam (v, substCon c, substExp dictA t) end
+      | Value_lam (bnds, t) => let
+          val (bnds, dict) = List.foldr
+            (fn ((x, c), (bnds, dict)) => let
+              val y = Variable.new ()
+                val dict = Dict.insert dict x (Value_var y)
+              in ((y, substCon c) :: bnds, dict) end)
+            (nil, dict)
+            bnds
+        in Value_lam (bnds, substExp dict t) end
       | Value_pack (c, v, c') =>
           Value_pack (substCon c, substValue dict v, substCon c')
       | Value_tuple vals =>
@@ -185,7 +200,7 @@ functor SubstFun(
 
     val exp = case exp of
         Exp_app (v, v') =>
-          Exp_app (substValue v, substValue v')
+          Exp_app (substValue v, ParList.map substValue v')
       | Exp_unpack (v, x, e) =>
           Exp_unpack (substValue v, x, substExpB e)
       | Exp_proj (v, i, x, e) =>
@@ -218,7 +233,7 @@ functor SubstFun(
 
     val exp = case exp of
         Exp_app (v, v') =>
-          Exp_app (substValue dict v, substValue dict v')
+          Exp_app (substValue dict v, ParList.map (substValue dict) v')
       | Exp_unpack (v, x, e) => let
           val (x, dictA) = alphaNew x
         in Exp_unpack (substValue dict v, x, substExpB dictA e) end

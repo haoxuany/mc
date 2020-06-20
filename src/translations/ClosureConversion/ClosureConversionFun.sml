@@ -26,7 +26,7 @@ functor ClosureConversionFun(
 
       | Value_fixlam lams => let
         (* <not t1, not t2, ..., not tn>
-        * => exists env :: T. env * <not (env * t1), ..., not (env * tn)> *)
+        * => exists env :: T. env * <not (t1 @ env), ..., not (tn @ env)> *)
           val free = VarSet.toList (freeVarsValue fullvalue)
           val freeTys = Type_product (ParList.map
             (fn x => translateCon (lookupType ctx x))
@@ -37,20 +37,24 @@ functor ClosureConversionFun(
           )
           val free = Value_tuple (ParList.map Value_var free)
 
-          val (ctx, tys, fbnds) = List.foldr
-            (fn ((f, _, c, _), (ctx, tys, fbnds)) => let
-              val notc = Type_not c
-              val f' = new () (* not (env * c) *)
-            in (extendType ctx f notc, notc :: tys, (f, f') :: fbnds) end)
-            (ctx, nil, nil)
-            lams
+          val lams = ParList.map (fn (f, bnds, e) => let
+            val f' = new () (* not (c @ env) *)
+            val cnot = Type_not (ParList.map #2 bnds)
+          in (f, bnds, e, f', cnot) end) lams
 
-          val (lams, t') = ListPair.unzip (ParList.map
-            (fn (f, x, c, e) => let
-              val e' = translateExp (extendType ctx x c) e
-              val c' = translateCon c
+          val tau = Type_productfix (ParList.map #5 lams)
 
-              val y = new () (* : freeTys * xty. new lambda binder *)
+          val ctx = List.foldr
+            (fn ((f, _, _, _, cnot), ctx) => extendType ctx f cnot)
+            ctx lams
+
+          val lams = ParList.map
+            (fn (f, bnds, e, f', _) => let
+              val ctx = List.foldr
+                (fn ((x, c), ctx) => extendType ctx x c)
+                ctx bnds
+              val e' = translateExp ctx e
+
               val env = new () (* : freeTys. environment bindings *)
               fun constructBind vars =
                 case vars of
@@ -62,34 +66,24 @@ functor ClosureConversionFun(
                     constructBind rest
                   )
 
-              val result = (f, y,
-                Type_product [freeTys, c'],
-                Exp_proj (
-                  Value_var y,
-                  1,
-                  x,
-                  Exp_proj (
-                    Value_var y,
-                    0,
-                    env,
-                    constructBind freeI
-                  )
-                )
-              )
+              val argbnds = (ParList.map
+                  (fn (x, c) => (x, translateCon c)) bnds)
+              val bnds = argbnds @ [(env, freeTys)]
+
+              val result = (f, bnds, constructBind freeI)
             in (
               result,
+              f',
               Type_not (
-                Type_product [
-                  Con_var 0,
-                  substInCon 0 nil 1 c'
-                ]
+                (ParList.map (fn (_, c) => substInCon 0 nil 1 c) argbnds)
+                @ [Con_var 0]
               )
             ) end)
-            lams)
+            lams
 
           val rebindFixpoints = fn e => ParList.foldr
-            (fn (((f, f'), ty), e) =>
-              (* assume f' : (not (env * ui)) *)
+            (fn (((f, _, _), f', ty), e) =>
+              (* assume f' : (not (ui @ env)) *)
               Exp_let (
                 Value_pack (
                   freeTys,
@@ -105,22 +99,22 @@ functor ClosureConversionFun(
                       ty]
                   )
                 ),
-                f, (* : exists env :: T. env * (not (env * ui)) *)
+                f, (* : exists env :: T. env * (not (ui @ env)) *)
                 e
               ))
             e
-            (ListPair.zip (fbnds, t'))
+            lams
 
-          val lams = ParList.map
-            (fn ((_, x, c, e), (_, f')) => (f', x, c, rebindFixpoints e))
-            (ListPair.zip (lams, fbnds))
+          val (lams, tys) = ListPair.unzip (ParList.map
+            (fn ((_, bnds, e), f', ty) =>
+              ((f', bnds, rebindFixpoints e), ty))
+            lams)
 
-          val tau = Type_productfix tys
           val tau' = Type_exists (
             Kind_type,
             Type_product [
               Con_var 0,
-              Type_productfix t'
+              Type_productfix tys
             ]
           )
           val result = Value_pack (
@@ -136,8 +130,8 @@ functor ClosureConversionFun(
 
       | Value_pick (v, i) => let
         (* assume v : <not t1, ..., not tn> =>
-        * => exists env :: T. env * <not (env * t1), ..., not (env * tn)> *)
-        (* result is : not ti => exists env0 :: T. env0 * (not (env0 * ti)) *)
+        * => exists env :: T. env * <not (t1 @ env), ..., not (tn @ env)> *)
+        (* result is : not ti => exists env0 :: T. env0 * (not (ti @ env0)) *)
         (* Note, by canonical forms of v's productfix type, we know already
         * that v is a closure converted fixpoint package. As such, env0 can
         * be trivially unit and contain no interesting value. It is however
@@ -153,40 +147,37 @@ functor ClosureConversionFun(
           val tau' = translateCon tinot
           val unitty = Type_product nil
 
-          val y = new () (* : env0 * ti *)
-          val v = new () (* : ti *)
-          val z = new () (* : env * <not (env * t1), ...> *)
-          val lams = new () (* : <not (env * t1), ...> *)
+          val bnds = ParList.map
+            (fn ty => (new (), translateCon ty))
+            ti
+
+          val z = new () (* : env * <not (ti @ env), ...> *)
+          val lams = new () (* : <not (ti @ env), ...> *)
           val env = new () (* : env *)
           val result = Value_pack (
             unitty,
             Value_tuple [
               Value_tuple nil,
               Value_lam (
-                y, (* : env0 * ti *)
-                Type_product [unitty, translateCon ti],
-                Exp_proj (
-                  Value_var y,
-                  1,
-                  v, (* : ti *)
-                  Exp_unpack (
-                    v',
-                    z, (* : env * <not (env * t1), ...> *)
-                    substInExp 0 nil 1 (varSubst nil) (Exp_proj (
+                bnds @ [(new (), unitty)], (* ti1, ..., tin, env0 *)
+                Exp_unpack (
+                  v',
+                  z, (* : env * <not (ti @ env), ...> *)
+                  substInExp 0 nil 1 (varSubst nil) (Exp_proj (
+                    Value_var z,
+                    0,
+                    env,
+                    Exp_proj (
                       Value_var z,
-                      0,
-                      env,
-                      Exp_proj (
-                        Value_var z,
-                        1,
-                        lams, (* : <not (env * t1), ...> *)
-                        Exp_app (
-                          Value_pick (Value_var lams, i),
-                          Value_tuple [Value_var env, Value_var v]
-                        )
+                      1,
+                      lams, (* : <not (ti @ env), ...> *)
+                      Exp_app (
+                        Value_pick (Value_var lams, i),
+                        (ParList.map (fn (x, _) => Value_var x) bnds)
+                        @ [Value_var env]
                       )
-                    ))
-                  )
+                    )
+                  ))
                 )
               )
             ],
@@ -196,11 +187,8 @@ functor ClosureConversionFun(
         in (result, tau, tau') end
         debug "pick"
 
-      | Value_lam (x, c, e) => let
-          (* not t => exists env :: T. env * (not (env * u)) *)
-          val e' = translateExp (extendType ctx x c) e
-          val c' = translateCon c
-
+      | Value_lam (bnds, e) => let
+          (* not t => exists env :: T. env * (not (u @ env)) *)
           val free = VarSet.toList (freeVarsValue fullvalue)
           val freeTys = Type_product (ParList.map
             (fn x => translateCon (lookupType ctx x))
@@ -210,10 +198,12 @@ functor ClosureConversionFun(
             free
           )
 
-          val env = new () (* : env *)
-          val y = new () (* : env * u *)
-          val yty = Type_product [freeTys, c']
+          val ctx = List.foldr
+            (fn ((x, c), ctx) => extendType ctx x c)
+            ctx bnds
+          val e' = translateExp ctx e
 
+          val env = new () (* : env *)
           fun constructBind vars =
             case vars of
               nil => e'
@@ -224,36 +214,26 @@ functor ClosureConversionFun(
                 constructBind rest
               )
 
-          val tau = Type_not c
+          val tau = Type_not (ParList.map #2 bnds)
+          val bnds = ParList.map (fn (x, c) => (x, translateCon c)) bnds
           val tau' = Type_exists (
             Kind_type,
             Type_product [
               Con_var 0,
               Type_not (
-                Type_product [
-                  Con_var 0,
-                  substInCon 0 nil 1 c'
-                ]
+                (ParList.map (fn (_, c) => substInCon 0 nil 1 c) bnds)
+                @ [Con_var 0]
               )
             ]
           )
+
           val result = Value_pack (
             freeTys,
             Value_tuple [
               Value_tuple (ParList.map Value_var free),
               Value_lam (
-                y, yty, (* : env * u *)
-                Exp_proj (
-                  Value_var y,
-                  1,
-                  x,
-                  Exp_proj (
-                    Value_var y,
-                    0,
-                    env,
-                    constructBind freeI
-                  )
-                )
+                bnds @ [(env, freeTys)],
+                constructBind freeI
               )
             ],
             tau'
@@ -315,27 +295,27 @@ functor ClosureConversionFun(
     val result = case e of
       Exp_app (v, v') => let
         val (v, _, _) = translateValue ctx v
-        (* where not t2 => exists env :: T. env * (not (env * u2)) *)
-        val (v', t2, u2) = translateValue ctx v'
+        (* where not t2 => exists env :: T. env * (not (u2 @ env)) *)
+        val v' = ParList.map (fn v => #1 (translateValue ctx v)) v'
 
-        val x = new () (* : env * (not (env * u2)) *)
+        val x = new () (* : env * (not (u2 @ env)) *)
         val env = new () (* : env *)
-        val f = new () (* : not (env * u2) *)
+        val f = new () (* : not (u2 @ env) *)
         val result = Exp_unpack (
           v,
-          x, (* : env * (not (env * u2)) *)
+          x, (* : env * (not (u2 @ env)) *)
           substInExp 0 nil 1 (varSubst nil) (
             Exp_proj (
               Value_var x,
               1,
-              f, (* : not (env * u2) *)
+              f, (* : not (u2 @ env) *)
               Exp_proj (
                 Value_var x,
                 0,
                 env, (* : env *)
                 Exp_app (
                   Value_var f,
-                  Value_tuple [Value_var env, v']
+                  v' @ [Value_var env]
                 )
               )
             )
