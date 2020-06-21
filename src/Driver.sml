@@ -6,6 +6,8 @@ structure Driver = struct
   structure C = CLang.Abt
   structure BLang = BlockedCps
   structure B = BLang.Abt
+  structure LLang = Low
+  structure L = LLang.Abt
 
   local
    open F
@@ -175,5 +177,16 @@ structure Driver = struct
   val () = TextIO.print "\n\n\n"
 
   val () = BLang.TypeCheck.typeProgramCheck (BLang.Context.new ()) program
+  end
+
+  local
+    open Erasure
+    open L
+  in
+  val program = translateProgram program
+
+  val () = TextIO.print "erasure:\n"
+  val () = LLang.Print.printProgram program
+  val () = TextIO.print "\n\n\n"
   end
 end

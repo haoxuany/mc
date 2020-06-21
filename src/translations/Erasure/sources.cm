@@ -1,0 +1,14 @@
+Library
+  structure Erasure
+is
+  ../../../cmlib/cmlib.cm
+  ../../util/sources.cm
+
+  ../../BlockedCPS/release.cm
+  ../../Low/release.cm
+
+  DEBUGTRANSLATION.sml
+  DebugTranslation.sml
+
+  ErasureFun.sml
+  ErasureDebug.sml
