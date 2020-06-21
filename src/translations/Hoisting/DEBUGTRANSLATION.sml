@@ -14,7 +14,13 @@ signature DEBUGTRANSLATION = sig
 
   val extendType : ctx -> var -> con -> ctx
 
+  val extendTypes : ctx -> (var * con) list -> ctx
+
   val extendKind : ctx -> kind -> ctx
 
+  val typeValueSynth : ctx -> value -> con
+
   val weakHeadNormalize : ctx -> con -> con
+
+  val kinds : ctx -> kind list
 end

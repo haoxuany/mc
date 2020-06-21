@@ -4,7 +4,6 @@ structure HoistingConstructorTranslation = struct
   structure TLang = BlockedCps
   structure S = SLang.Abt
   structure T = TLang.Abt
-  open TLang.Subst
 
   exception TypeError
 
@@ -26,7 +25,7 @@ structure HoistingConstructorTranslation = struct
     | S.Con_proj2 c => T.Con_proj2 (translateCon c)
     | S.Con_unit => T.Con_unit
 
-    | S.Type_not c => T.Type_not [translateCon c]
+    | S.Type_not c => T.Type_not (ParList.map translateCon c)
     | S.Type_productfix cs => T.Type_productfix (ParList.map translateCon cs)
     | S.Type_exists (k, c) => T.Type_exists (translateKind k, translateCon c)
     | S.Type_product tys => T.Type_product (ParList.map translateCon tys)

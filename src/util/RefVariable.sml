@@ -9,7 +9,7 @@ structure RefVariable :> VARIABLE = struct
     val () = count := !count + 1
   in result end
 
-  val eq = ((op =) : int * int -> bool)
+  fun eq (a, b) = (a : int) = b
   val compare = Int.compare
 
   fun print i = "#" ^ (Int.toString i)

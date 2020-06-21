@@ -8,5 +8,12 @@ structure DebugTranslation : DEBUGTRANSLATION = struct
 
   open SContext
 
+  val emptyCtx = SContext.new
+
+  fun extendTypes ctx l =
+    List.foldr (fn ((x, c), ctx) => extendType ctx x c) ctx l
+
+  val typeValueSynth = SLang.TypeCheck.typeValueSynth
+
   val weakHeadNormalize = SLang.Equiv.weakHeadNormalize
 end
