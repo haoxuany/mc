@@ -50,7 +50,7 @@ functor PrintFun(
           (ParList.map (fn (x, c) => [raw (vp x), sc c]) bnds)),
           se e]
     | Value_pack (c, v, c') =>
-        head "pack" [sc c, sv v, sc c]
+        head "pack" [sc c, sv v, sc c']
     | Value_tuple vals =>
         head "*" (ParList.map sv vals)
     | Value_inj (c, i, v) =>

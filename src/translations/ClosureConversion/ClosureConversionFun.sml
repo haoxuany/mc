@@ -134,8 +134,8 @@ functor ClosureConversionFun(
         (* result is : not ti => exists env0 :: T. env0 * (not (ti @ env0)) *)
         (* Note, by canonical forms of v's productfix type, we know already
         * that v is a closure converted fixpoint package. As such, env0 can
-        * be trivially unit and contain no interesting value. It is however
-        * not obvious that this form isn't eta-reducible. *)
+        * contains no interesting value other than v itself,
+        * which is out of this lambda scope. *)
           val (v', t, u) = translateValue ctx v
 
           val tinot = case weakHeadNormalize ctx t of
@@ -151,17 +151,18 @@ functor ClosureConversionFun(
             (fn ty => (new (), translateCon ty))
             ti
 
+          val vx = new () (* : u *)
           val z = new () (* : env * <not (ti @ env), ...> *)
           val lams = new () (* : <not (ti @ env), ...> *)
           val env = new () (* : env *)
           val result = Value_pack (
-            unitty,
+            u,
             Value_tuple [
-              Value_tuple nil,
-              Value_lam (
-                bnds @ [(new (), unitty)], (* ti1, ..., tin, env0 *)
+              v',
+              (Value_lam (
+                bnds @ [(vx, u)], (* ti1, ..., tin, env0 *)
                 Exp_unpack (
-                  v',
+                  Value_var vx,
                   z, (* : env * <not (ti @ env), ...> *)
                   substInExp 0 nil 1 (varSubst nil) (Exp_proj (
                     Value_var z,
@@ -179,7 +180,8 @@ functor ClosureConversionFun(
                     )
                   ))
                 )
-              )
+              ))
+              debugNoFreeVars "pick"
             ],
             tau'
           )
@@ -231,10 +233,11 @@ functor ClosureConversionFun(
             freeTys,
             Value_tuple [
               Value_tuple (ParList.map Value_var free),
-              Value_lam (
+              (Value_lam (
                 bnds @ [(env, freeTys)],
                 constructBind freeI
-              )
+              ))
+              debugNoFreeVars "lam"
             ],
             tau'
           )

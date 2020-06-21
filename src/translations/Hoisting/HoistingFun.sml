@@ -6,11 +6,16 @@ functor HoistingFun(
   structure DebugTranslation = DebugTranslation
   open DebugTranslation
 
+  (* Note: this only works assuming that variable *)
   structure BindingSet = SplaySet(
     structure Elem = struct
-      type t = T.var * T.block
-      fun eq ((a, _), (b, _)) = Variable.eq (a, b)
-      fun compare ((a, _), (b, _)) = Variable.compare (a, b)
+      type t = int (* order *) * T.var * T.block
+      fun eq ((_, a, _), (_, b, _)) = Variable.eq (a, b)
+      fun compare ((ia, a, _), (ib, b, _)) =
+        case (Int.compare (ia, ib), Variable.compare (a, b)) of
+          (GREATER, _) => LESS
+        | (LESS, _) => GREATER
+        | (EQUAL, ord) => ord
     end
   )
   open BindingSet
@@ -20,7 +25,21 @@ functor HoistingFun(
 
   open SLang.Subst
 
-  fun translateValue (ctx : ctx) value = let
+  (* we need an order element to make sure that subtree
+  * get an earlier block than the current tree. This is
+  * because hoisting can introduce variables that refers to previous
+  * blocks, which is not closure converted. say
+  *
+  * fn x => (fn y => fn y) is a closure converted program, however,
+  * let z = fn y => y in fn x => z end is not. Hence,
+  * the subtree (fn y => fn y) needs to be hoisted at a *higher* order
+  * than the current expression. *)
+  fun translateValue (ctx : ctx) value order = let
+    val translateValue = fn ctx => fn value =>
+      translateValue ctx value (order + 1)
+    val translateExp = fn ctx => fn exp =>
+      translateExp ctx exp (order + 1)
+
     val result = case value of
       S.Value_var v => (empty, T.Value_var v)
 
@@ -56,7 +75,7 @@ functor HoistingFun(
 
         val b = ParList.foldr
           (fn (a, b) => union a b)
-          (singleton (f, fixblock))
+          (singleton (order, f, fixblock))
           bs
 
         (* for ctx k0, k1, ... , kn |- v : tau, construct
@@ -97,7 +116,7 @@ functor HoistingFun(
 
         val f = new ()
 
-        val b = insert b (f, lamblock)
+        val b = insert b (order, f, lamblock)
 
         (* for ctx k0, k1, ... , kn |- v : tau, construct
         * |- f <c :: k0> ... <c :: kn>
@@ -133,7 +152,12 @@ functor HoistingFun(
 
   in result end
 
-  and translateExp (ctx : ctx) exp = let
+  and translateExp (ctx : ctx) exp order = let
+    val translateValue = fn ctx => fn value =>
+      translateValue ctx value (order + 1)
+    val translateExp = fn ctx => fn exp =>
+      translateExp ctx exp (order + 1)
+
     val result = case exp of
       S.Exp_app (v, v') => let
         val (b, v) = translateValue ctx v
@@ -193,4 +217,10 @@ functor HoistingFun(
     | S.Exp_exit i => (empty, T.Exp_exit i)
 
   in result end
+
+  fun translateProgram e = let
+    val (b, e) = translateExp (emptyCtx ()) e 0
+  in T.Program (
+    ParList.map (fn (_, x, b) => (x, b)) (BindingSet.toList b),
+    e) end
 end

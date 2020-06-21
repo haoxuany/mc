@@ -40,7 +40,7 @@ functor PrintFun(
     | Value_pick (v, i) =>
         head "pick" [sv v, int i]
     | Value_pack (c, v, c') =>
-        head "pack" [sc c, sv v, sc c]
+        head "pack" [sc c, sv v, sc c']
     | Value_polyapp (v, c) =>
         head "polyapp" [sv v, sc c]
     | Value_tuple vals =>

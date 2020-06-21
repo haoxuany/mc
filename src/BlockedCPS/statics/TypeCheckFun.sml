@@ -146,7 +146,7 @@ functor TypeCheckFun(
         val () = typeExpCheck ctx e
       in Type_not tys end
     | Block_polylam (k, b) =>
-        typeBlockSynth (extendKind ctx k) b
+        Type_forall (k, typeBlockSynth (extendKind ctx k) b)
 
   (* ctx |> b <-- c *)
   and typeBlockCheck ctx block con =
@@ -155,9 +155,11 @@ functor TypeCheckFun(
   (* ctx |> p : 0 *)
   and typeProgramCheck ctx program =
     case program of
-      Program (bnds, e) =>
-        typeExpCheck (ParList.foldr
-          (fn ((x, b), ctx') => extendType ctx' x (typeBlockSynth ctx b))
-          ctx bnds)
-          e
+      Program (bnds, e) => let
+        fun check ctx bnds =
+          case bnds of
+            nil => typeExpCheck ctx e
+          | (x, b) :: rest =>
+              check (extendType ctx x (typeBlockSynth ctx b)) rest
+      in check ctx bnds end
 end
