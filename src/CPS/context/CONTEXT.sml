@@ -15,5 +15,6 @@ signature CONTEXT = sig
   val lookupKind : t -> int -> kind
   val lookupType : t -> var -> con
 
+  val withoutVars : t -> t
   val kinds : t -> kind list
 end

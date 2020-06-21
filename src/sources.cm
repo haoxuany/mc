@@ -3,8 +3,10 @@ Group is
 
   FOmegaS/release.cm
   CPS/release.cm
+  BlockedCPS/release.cm
 
   translations/CpsConversion/sources.cm
   translations/ClosureConversion/sources.cm
+  translations/Hoisting/sources.cm
 
   Driver.sml

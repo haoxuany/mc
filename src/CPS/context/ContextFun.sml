@@ -62,6 +62,8 @@ where type exp = Abt.exp
     val {ty, index} = Dict.lookup termOfType var
   in substInCon 0 nil (conOfKindN - index) ty end
 
-  fun kinds ({conOfKind, ...} : t) = conOfKind
+  fun withoutVars ({conOfKindN, conOfKind, ...} : t) =
+    {conOfKindN = conOfKindN, conOfKind = conOfKind, termOfType = Dict.empty}
 
+  fun kinds ({conOfKind, ...} : t) = conOfKind
 end

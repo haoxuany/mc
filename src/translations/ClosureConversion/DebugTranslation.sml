@@ -76,4 +76,26 @@ structure DebugTranslation : DEBUGTRANSLATION = struct
       "target exp typechecks"
       (fn () => TLang.TypeCheck.typeExpCheck (#2 ctx) texp)
   in () end
+
+  fun debugNoFreeVars (ctx : ctx)
+    (tval : value)
+    (name : string) = let
+    val check = fn thm => fn f => check f name thm
+
+    val () = check
+      "translation has no free variables"
+      (fn () => let
+        val free = TLang.FreeVars.freeVarsValue tval
+        val free = TLang.FreeVars.VarSet.toList free
+        val len = List.length free
+      in if len = 0 then
+          (TLang.Equiv.kindCheck (#2 ctx)
+            (TLang.TypeCheck.typeValueSynth
+            (TLang.Context.withoutVars (#2 ctx)) tval)
+            T.Kind_type)
+         else raise Fail
+           (String.concat (("free vars of: ") ::
+             (ParList.map T.Variable.print free)))
+      end)
+  in () end
 end

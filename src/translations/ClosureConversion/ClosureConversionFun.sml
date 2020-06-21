@@ -15,6 +15,9 @@ functor ClosureConversionFun(
       (debugValue ctx fullvalue tau result tau' name; ans)
     infix 9 debug
 
+    val debugNoFreeVars = fn (v, name) => (debugNoFreeVars ctx v name; v)
+    infix 9 debugNoFreeVars
+
     val result =
       case v of
         Value_var x => let
@@ -121,7 +124,8 @@ functor ClosureConversionFun(
             freeTys,
             Value_tuple [
               free,
-              Value_fixlam lams
+              (Value_fixlam lams)
+              debugNoFreeVars "fixlam"
             ],
             tau'
           )

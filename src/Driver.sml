@@ -1,12 +1,14 @@
 
 structure Driver = struct
-  structure SLang = FOmegaS
-  structure S = SLang.Abt
-  structure TLang = Cps
-  structure T = TLang.Abt
+  structure FLang = FOmegaS
+  structure F = FLang.Abt
+  structure CLang = Cps
+  structure C = CLang.Abt
+  structure BLang = BlockedCps
+  structure B = BLang.Abt
 
   local
-   open S
+   open F
   in
     val newvar = Variable.new
 
@@ -113,11 +115,11 @@ structure Driver = struct
 
   local
     open CpsConversion
-    open T
+    open C
   in
 
   val () = TextIO.print "fomega:\n"
-  val () = SLang.Print.printTerm source
+  val () = FLang.Print.printTerm source
   val () = TextIO.print "\n\n\n"
 
   val k = newvar ()
@@ -128,7 +130,7 @@ structure Driver = struct
     k
     kexn
 
-  val () = SLang.TypeCheck.typeCheck (SLang.Context.new ()) source tau
+  val () = FLang.TypeCheck.typeCheck (FLang.Context.new ()) source tau
 
   val x = newvar ()
   val y = newvar ()
@@ -141,24 +143,37 @@ structure Driver = struct
       result
     )
   )
-  val () = TLang.TypeCheck.typeExpCheck (TLang.Context.new ()) program
+  val () = CLang.TypeCheck.typeExpCheck (CLang.Context.new ()) program
 
   val () = TextIO.print "cps:\n"
-  val () = TLang.Print.printExp program
+  val () = CLang.Print.printExp program
   val () = TextIO.print "\n\n\n"
   end
 
   local
     open ClosureConversion
-    open T
+    open C
   in
   val program = translateExp
     (DebugTranslation.emptyCtx ())
     program
-  val () = TLang.TypeCheck.typeExpCheck (TLang.Context.new ()) program
+  val () = CLang.TypeCheck.typeExpCheck (CLang.Context.new ()) program
 
   val () = TextIO.print "closure:\n"
-  val () = TLang.Print.printExp program
+  val () = CLang.Print.printExp program
   val () = TextIO.print "\n\n\n"
+  end
+
+  local
+    open Hoisting
+    open B
+  in
+  val program = translateProgram program
+
+  val () = TextIO.print "hoist:\n"
+  val () = BLang.Print.printProgram program
+  val () = TextIO.print "\n\n\n"
+
+  val () = BLang.TypeCheck.typeProgramCheck (BLang.Context.new ()) program
   end
 end

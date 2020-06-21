@@ -29,4 +29,9 @@ signature DEBUGTRANSLATION = sig
     exp ->
     string ->
     unit
+
+  val debugNoFreeVars : ctx ->
+    value ->
+    string ->
+    unit
 end
