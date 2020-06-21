@@ -1,0 +1,26 @@
+Library
+  signature ABT
+  functor AbtFun
+
+  signature FREEVARS
+  functor FreeVarsFun
+
+  signature SUBST
+  functor SubstFun
+
+  signature PRINT
+  functor PrintFun
+is
+  ../../cmlib/cmlib.cm
+  ../util/sources.cm
+
+  lang/ABT.sml
+  lang/AbtFun.sml
+  lang/FREEVARS.sml
+  lang/FreeVarsFun.sml
+
+  subst/SUBST.sml
+  subst/SubstFun.sml
+
+  print/PRINT.sml
+  print/PrintFun.sml
