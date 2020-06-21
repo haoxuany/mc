@@ -300,14 +300,14 @@ functor SubstFun(
 
     val program = case program of
         Program (bnds, e) => let
-          val (bnds, dictA) = ParList.foldr
-            (fn ((x, b), (bnds, dictA)) => let
-              val y = Variable.new ()
-              val dictA = Dict.insert dictA x (Value_var y)
-            in ((y, substBlock dict b) :: bnds, dictA) end)
-            (nil, dict)
-            bnds
-        in Program (bnds, substExp dictA e) end
+          fun subst bnds dict substbnds =
+            case bnds of
+              nil => Program (List.rev substbnds, substExp dict e)
+            | (x, b) :: rest => let
+                val y = Variable.new ()
+                val dict' = Dict.insert dict x (Value_var y)
+              in subst rest dict' ((y, substBlock dict b) :: substbnds) end
+        in subst bnds dict nil end
   in program end
 
 
