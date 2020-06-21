@@ -3,6 +3,8 @@ Library
   structure Variable
   structure ParList
   structure HeadPrinter
+  functor SymbolFun
+  structure Symbol
 is
   ../../cmlib/cmlib.cm
 
@@ -13,3 +15,7 @@ is
   ParList.sml
 
   HeadPrinter.sml
+
+  SYMBOL.sig
+  SymbolFun.sml
+  Symbol.sml
