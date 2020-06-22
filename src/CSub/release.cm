@@ -1,0 +1,10 @@
+Library
+  signature CSUB
+  structure CSub
+is
+  ../../cmlib/cmlib.cm
+  sources.cm
+  ../util/sources.cm
+
+  CSUB.sml
+  CSub.sml

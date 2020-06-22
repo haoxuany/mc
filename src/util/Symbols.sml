@@ -1,0 +1,2 @@
+
+structure Symbols : SYMBOL = SymbolFun()

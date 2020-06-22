@@ -26,6 +26,8 @@ functor SymbolFun(
         Cache.insert cache suggest x; append suggest x end
   in (name, StringHashable.hash name) end
 
+  fun raw name = (name, StringHashable.hash name)
+
   fun compare ((_, a), (_, b)) = Word.compare (a, b)
   fun eq (a, b) = compare (a, b) = EQUAL
 

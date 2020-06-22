@@ -3,6 +3,8 @@ signature SYMBOL = sig
   type t
 
   val fresh : string -> t
+  val raw : string -> t
+
   val compare : t * t -> order
   val eq : t * t -> bool
 
