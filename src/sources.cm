@@ -6,10 +6,12 @@ Group is
   CPS/release.cm
   BlockedCPS/release.cm
   Low/release.cm
+  CSub/release.cm
 
   translations/CpsConversion/sources.cm
   translations/ClosureConversion/sources.cm
   translations/Hoisting/sources.cm
   translations/Erasure/sources.cm
+  translations/Codegen/sources.cm
 
   Driver.sml

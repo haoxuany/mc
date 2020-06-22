@@ -1,0 +1,3 @@
+
+signature DEBUGTRANSLATION = sig
+end

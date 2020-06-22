@@ -9,11 +9,13 @@ structure Abt : ABT = struct
     CType_sym of sym
   | CType_void
   | CType_ptr of ctype
+  | CType_fn of ctype * ctype list
 
   datatype state =
     State_exp of exp
   | State_decl of ctype * sym
   | State_return of exp option
+  | State_switch of exp * (exp * state list) list * (state list option)
 
   and exp =
     Exp_sym of sym
@@ -28,6 +30,7 @@ structure Abt : ABT = struct
 
   and decl =
     Decl_fn of ctype * sym * (ctype * sym) list * state list
+  | Decl_fnty of ctype * sym * ctype list
 
   datatype cfile =
     CFile of {

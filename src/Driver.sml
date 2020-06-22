@@ -8,6 +8,8 @@ structure Driver = struct
   structure B = BLang.Abt
   structure LLang = Low
   structure L = LLang.Abt
+  structure CCLang = CSub
+  structure CC = CSub.Abt
 
   local
    open F
@@ -119,7 +121,7 @@ structure Driver = struct
     end
   end
 
-  val source = example_fixpoint
+  val source = example_unitapp
 
   local
     open CpsConversion
@@ -194,5 +196,16 @@ structure Driver = struct
   val () = TextIO.print "erasure:\n"
   val () = LLang.Print.printProgram program
   val () = TextIO.print "\n\n\n"
+  end
+
+  local
+    open Codegen
+    open CC
+  in
+  val program = translateProgram program
+
+  val file = TextIO.openOut "test.c"
+  val () = CCLang.Print.printCFile file program
+  val () = TextIO.closeOut file
   end
 end

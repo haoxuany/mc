@@ -33,6 +33,22 @@ functor PrintFun(
          print "*";
          ()
        )
+     | CType_fn (ret, args) => (
+         printCType stream ret;
+         print " (*)(";
+         let
+           fun pargs args =
+             case args of
+               nil => ()
+             | [one] => printCType stream one
+             | h :: rest => (
+                 printCType stream h;
+                 print ", ";
+                 pargs rest
+               )
+         in pargs args end;
+         print ")"
+       )
   end
 
   fun printState stream indent state = let
@@ -60,6 +76,49 @@ functor PrintFun(
               print ";"
             ))
         )
+     | State_switch (e, cases, default) => let
+         fun pstates i s =
+           case s of
+             nil => ()
+           | [one] => printState stream i one
+           | h :: rest => (
+               printState stream i h;
+               print "\n";
+               pstates i rest
+             )
+
+       in pIndent ();
+         print "switch (";
+         printExp stream 0 e;
+         print ") {\n";
+         let
+           fun psingle (e, s) = (
+             pIndent ();
+             print "case ";
+             printExp stream 0 e;
+             print ":\n";
+             pstates (indent + 2) s
+           )
+
+           fun pcase cases =
+             case cases of
+               nil => ()
+             | [one] => psingle one
+             | h :: rest => (
+                 psingle h;
+                 print "\n";
+                 pcase rest
+               )
+         in pcase cases end;
+         (case default of
+            NONE => ()
+          | SOME s => (
+              pIndent ();
+              print "default:\n";
+              pstates (indent + 2) s
+            )
+         )
+       end
   end
 
   and printExp stream indent exp = let
@@ -88,37 +147,35 @@ functor PrintFun(
       )
     | Exp_cast (e, ty) => (
         pIndent ();
-        print "(";
+        print "((";
         printCType stream ty;
-        print ")(";
+        print ")";
         printExp stream 0 e;
         print ")"
       )
     | Exp_deref e => (
         pIndent ();
-        print "*(";
+        print "(*";
         printExp stream 0 e;
         print ")"
       )
     | Exp_addr e => (
         pIndent ();
-        print "&(";
+        print "(&";
         printExp stream 0 e;
         print ")"
       )
     | Exp_index (e, e') => (
         pIndent ();
-        print "(";
         printExp stream 0 e;
-        print ")[";
+        print "[";
         printExp stream 0 e';
         print "]"
       )
     | Exp_call (e, es) => (
         pIndent ();
-        print "(";
         printExp stream 0 e;
-        print ")(";
+        print "(";
         let
           fun pargs args =
             case args of
@@ -163,6 +220,24 @@ functor PrintFun(
           (fn s => (printState stream 2 s; print "\n"))
           states;
         print "}"
+      )
+    | Decl_fnty (retty, name, args) => (
+        printCType stream retty;
+        print " ";
+        print (Symbols.name name);
+        print "(";
+        let
+          fun pargs args =
+            case args of
+              nil => ()
+            | [one] => printCType stream one
+            | h :: rest => (
+                printCType stream h;
+                print ", ";
+                pargs rest
+              )
+        in pargs args end;
+        print ");"
       )
   end
 

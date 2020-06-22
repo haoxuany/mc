@@ -1,0 +1,14 @@
+Library
+  structure Codegen
+is
+  ../../../cmlib/cmlib.cm
+  ../../util/sources.cm
+
+  ../../Low/release.cm
+  ../../CSub/release.cm
+
+  DEBUGTRANSLATION.sml
+  DebugTranslation.sml
+
+  CodegenFun.sml
+  CodegenDebug.sml
