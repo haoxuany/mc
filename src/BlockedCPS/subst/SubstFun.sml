@@ -34,8 +34,8 @@ functor SubstFun(
     val con =
       case c of
         Type_not cs => Type_not (ParList.map substCon cs)
-      | Type_productfix tys =>
-          Type_productfix $ ParList.map substCon tys
+      | Type_productfix tys => Type_productfix
+          (ParList.map (fn (sym, ty) => (sym, substCon ty)) tys)
       | Type_forall (k, c') =>
           (* c' is under a binder *)
           Type_forall (substKind k, substConB c')
@@ -232,8 +232,8 @@ functor SubstFun(
 
     val block = case block of
         Block_fixlam lams =>
-          Block_fixlam (ParList.map (fn (f, bnds, e) =>
-            (f,
+          Block_fixlam (ParList.map (fn (s, f, bnds, e) =>
+            (s, f,
             ParList.map (fn (x, c) => (x, substCon c)) bnds,
             substExp e)
           ) lams)
@@ -255,14 +255,14 @@ functor SubstFun(
     val block = case block of
         Block_fixlam lams => let
           val (fs, dict) = List.foldr
-          (fn ((f, _, _), (fs, dict)) => let
+          (fn ((_, f, _, _), (fs, dict)) => let
             val f' = Variable.new ()
             val dict = Dict.insert dict f (Value_var f')
           in (f' :: fs, dict) end)
           (nil, dict)
           lams
         in Block_fixlam (ParList.map
-          (fn ((_, bnds, e), f) => let
+          (fn ((s, _, bnds, e), f) => let
             val (bnds, dict) = List.foldr
               (fn ((x, c), (bnds, dict)) => let
                 val y = Variable.new ()
@@ -270,7 +270,7 @@ functor SubstFun(
               in ((y, substCon c) :: bnds, dict) end)
               (nil, dict)
               bnds
-          in (f, bnds, substExp dict e) end)
+          in (s, f, bnds, substExp dict e) end)
           (ListPair.zip (lams, fs))) end
       | Block_lam (bnds, t) => let
           val (bnds, dict) = List.foldr

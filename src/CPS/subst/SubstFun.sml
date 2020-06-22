@@ -34,8 +34,8 @@ functor SubstFun(
     val con =
       case c of
         Type_not cs => Type_not (ParList.map substCon cs)
-      | Type_productfix tys =>
-          Type_productfix $ ParList.map substCon tys
+      | Type_productfix tys => Type_productfix
+          (ParList.map (fn (sym, ty) => (sym, substCon ty)) tys)
       | Type_exists (k, c') =>
           (* c' is under a binder *)
           Type_exists (substKind k, substConB c')
@@ -100,8 +100,8 @@ functor SubstFun(
     val value = case value of
         Value_var v => value
       | Value_fixlam lams =>
-          Value_fixlam (ParList.map (fn (f, bnds, e) =>
-            (f,
+          Value_fixlam (ParList.map (fn (s, f, bnds, e) =>
+            (s, f,
             ParList.map (fn (x, c) => (x, substCon c)) bnds,
             substExp e)
           ) lams)
@@ -150,14 +150,14 @@ functor SubstFun(
                else substConInValue 0 nil 0 shifts v)
       | Value_fixlam lams => let
           val (fs, dict) = List.foldr
-          (fn ((f, _, _), (fs, dict)) => let
+          (fn ((_, f, _, _), (fs, dict)) => let
             val f' = Variable.new ()
             val dict = Dict.insert dict f (Value_var f')
           in (f' :: fs, dict) end)
           (nil, dict)
           lams
         in Value_fixlam (ParList.map
-          (fn ((_, bnds, e), f) => let
+          (fn ((s, _, bnds, e), f) => let
             val (bnds, dict) = List.foldr
               (fn ((x, c), (bnds, dict)) => let
                 val y = Variable.new ()
@@ -165,7 +165,7 @@ functor SubstFun(
               in ((y, substCon c) :: bnds, dict) end)
               (nil, dict)
               bnds
-          in (f, bnds, substExp dict e) end)
+          in (s, f, bnds, substExp dict e) end)
           (ListPair.zip (lams, fs))) end
       | Value_pick (v, i) =>
           Value_pick (substValue dict v, i)

@@ -26,9 +26,12 @@ functor RunFun(
              exp
          | Value_pick (fix as (Value_fixlam lams), i) => let
              val substs = ParList.map
-               (fn ((f, _, _), i) => (Value_pick (fix, i), f))
-               (ListPair.zip (lams, List.tabulate (List.length lams, fn i => i)))
-             val (_, bnds, e) = List.nth (lams, i)
+               (fn (s, f, _, _) => (Value_pick (fix, s), f))
+               lams
+             val (bnds, e) =
+               case List.find (fn lam => Symbols.eq (#1 lam, i)) lams of
+                 NONE => raise Stuck exp
+               | SOME (_, _, bnds, e) => (bnds, e)
            in substInExp 0 nil 0 (varSubst
              ((ParList.map
                (fn ((x, _), v) => (v, x)) (ListPair.zip (bnds, v')))

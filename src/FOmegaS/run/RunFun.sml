@@ -33,11 +33,14 @@ functor RunFun(
             (case term of
                Term_pick (fix as (Term_fixlam lams), i) => let
                  val substs = ParList.map
-                   (fn ((f, _, _, _, _), i) =>
-                     (Term_pick (fix, i), f))
-                   (ListPair.zip (lams,
-                     ParList.tabulate (List.length lams, fn i => i)))
-                 val (_, x, _, term, _) = List.nth (lams, i)
+                   (fn (s, f, _, _, _, _) => (Term_pick (fix, s), f))
+                   lams
+                 val (x, e) =
+                   case List.find
+                     (fn (s, _, _, _, _, _) => Symbols.eq (s, i))
+                     lams of
+                     NONE => raise Stuck fullterm
+                   | SOME (_, _, x, _, e, _) => (x, e)
                in substInTerm 0 nil 0
                   (varSubst ((term', x) :: substs)) term end
             | _ => raise Stuck fullterm)

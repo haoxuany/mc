@@ -129,7 +129,7 @@ functor EquivFun(
         (kindCheck ctx c Kind_type; kindCheck ctx c' Kind_type;
        Kind_singleton allc)
     | Type_productfix tys =>
-        (ParList.map (fn c => kindCheck ctx c Kind_type) tys;
+        (ParList.map (fn (_, c) => kindCheck ctx c Kind_type) tys;
        Kind_singleton allc)
    | Type_forall (k, c) =>
        (kindValid ctx k; kindCheck (extendKind ctx k) c Kind_type;
@@ -284,7 +284,9 @@ functor EquivFun(
         (conEquiv ctx c1 c2 Kind_type; conEquiv ctx c1' c2' Kind_type;
         Kind_type)
     | (Type_productfix tys, Type_productfix tys') =>
-        (ParList.map (fn (ty, ty') => conEquiv ctx ty ty' Kind_type)
+        (ParList.map (fn ((sym, ty), (sym', ty')) =>
+          if Symbols.eq (sym, sym') then conEquiv ctx ty ty' Kind_type
+          else raise TypeError)
           (ListPair.zip (tys, tys'));
         Kind_type)
     | (Type_forall (k1, c1), Type_forall (k2, c2)) =>

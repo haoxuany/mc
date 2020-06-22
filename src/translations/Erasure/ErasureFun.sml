@@ -88,13 +88,13 @@ functor ErasureFun(
     val result = case block of
       S.Block_fixlam lams => let
         val ctx = List.foldr
-          (fn ((f, bnds, e), ctx) =>
+          (fn ((_, f, bnds, e), ctx) =>
             extendType ctx f (S.Type_not (ParList.map #2 bnds)))
           ctx
           lams
         val lams = ParList.map
-          (fn (f, bnds, e) =>
-            (f, ParList.map #1 bnds, translateExp (extendTypes ctx bnds) e))
+          (fn (s, f, bnds, e) =>
+            (s, f, ParList.map #1 bnds, translateExp (extendTypes ctx bnds) e))
           lams
       in T.Block_fixlam lams end
 

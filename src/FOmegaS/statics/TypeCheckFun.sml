@@ -43,20 +43,23 @@ functor TypeCheckFun(
         typeSynth (extendType ctx v (typeSynth ctx e)) e'
     | Term_fixlam lams => let
         val (tys, ctx) = List.foldr
-          (fn ((f, _, c, _, c'), (tys, ctx)) => let
+          (fn ((s, f, _, c, _, c'), (tys, ctx)) => let
             val ty = Type_arrow (c, c')
-          in (ty :: tys, extendType ctx f ty) end)
+          in ((s, ty) :: tys, extendType ctx f ty) end)
           (nil, ctx)
           lams
         val _ = ParList.map
-          (fn (_, x, c, e, c') =>
+          (fn (_, _, x, c, e, c') =>
             (kindCheck ctx c Kind_type;
             typeCheck (extendType ctx x c) e c'))
           lams
       in Type_productfix tys end
     | Term_pick (e, i) =>
         (case weakHeadNormalize ctx (typeSynth ctx e) of
-           Type_productfix tys => List.nth (tys, i)
+           Type_productfix tys =>
+             (case List.find (fn (s, _) => Symbols.eq (s, i)) tys of
+                NONE => raise TypeError
+              | SOME (_, ty) => ty)
         | _ => raise TypeError)
     | Term_app (e, e') =>
         (case weakHeadNormalize ctx (typeSynth ctx e) of

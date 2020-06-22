@@ -76,14 +76,14 @@ functor SubstFun(
     val block = case block of
         Block_fixlam lams => let
           val (fs, dict) = List.foldr
-          (fn ((f, _, _), (fs, dict)) => let
+          (fn ((_, f, _, _), (fs, dict)) => let
             val f' = Variable.new ()
             val dict = Dict.insert dict f (Value_var f')
           in (f' :: fs, dict) end)
           (nil, dict)
           lams
         in Block_fixlam (ParList.map
-          (fn ((_, xs, e), f) => let
+          (fn ((s, _, xs, e), f) => let
             val (xs, dict) = List.foldr
               (fn (x, (xs, dict)) => let
                 val y = Variable.new ()
@@ -91,7 +91,7 @@ functor SubstFun(
               in (y :: xs, dict) end)
               (nil, dict)
               xs
-          in (f, xs, substExp dict e) end)
+          in (s, f, xs, substExp dict e) end)
           (ListPair.zip (lams, fs))) end
       | Block_lam (xs, t) => let
           val (xs, dict) = List.foldr

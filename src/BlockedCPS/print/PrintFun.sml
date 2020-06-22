@@ -7,6 +7,8 @@ functor PrintFun(
 
   open HeadPrinter
 
+  val name = Symbols.name
+
   local
   fun sk kind =
     case kind of
@@ -19,7 +21,8 @@ functor PrintFun(
   and sc con =
    case con of
      Type_not c => head "not" (ParList.map sc c)
-   | Type_productfix cons => head "*" (ParList.map sc cons)
+   | Type_productfix tys => head "*" (List.concat
+       (ParList.map (fn (s, c) => [raw (name s), sc c]) tys))
    | Type_forall (k, c) => head "forall" [sk k, sc c]
    | Type_exists (k, c) => head "exists" [sk k, sc c]
    | Type_product cons => head "*" (ParList.map sc cons)
@@ -38,7 +41,7 @@ functor PrintFun(
     case value of
       Value_var i => raw (vp i)
     | Value_pick (v, i) =>
-        head "pick" [sv v, int i]
+        head "pick" [sv v, raw (name i)]
     | Value_pack (c, v, c') =>
         head "pack" [sc c, sv v, sc c']
     | Value_polyapp (v, c) =>
@@ -69,8 +72,8 @@ functor PrintFun(
   and sb block =
     case block of
       Block_fixlam lams =>
-        head "fix" (ParList.map (fn (f, bnds, e) =>
-          head "fn" [raw (vp f),
+        head "fix" (ParList.map (fn (s, f, bnds, e) =>
+          head "fn" [raw (name s), raw (vp f),
             list (List.concat
               (ParList.map (fn (x, c) => [raw (vp x), sc c]) bnds)),
             se e])

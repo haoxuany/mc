@@ -40,19 +40,22 @@ functor ClosureConversionFun(
           )
           val free = Value_tuple (ParList.map Value_var free)
 
-          val lams = ParList.map (fn (f, bnds, e) => let
+          val lams = ParList.map (fn (s, f, bnds, e) => let
             val f' = new () (* not (c @ env) *)
             val cnot = Type_not (ParList.map #2 bnds)
-          in (f, bnds, e, f', cnot) end) lams
+          in (s, f, bnds, e, f', cnot) end) lams
 
-          val tau = Type_productfix (ParList.map #5 lams)
+          val tau = Type_productfix
+            (ParList.map
+              (fn (s, _, _, _, _, c) => (s, c))
+            lams)
 
           val ctx = List.foldr
-            (fn ((f, _, _, _, cnot), ctx) => extendType ctx f cnot)
+            (fn ((_, f, _, _, _, cnot), ctx) => extendType ctx f cnot)
             ctx lams
 
           val lams = ParList.map
-            (fn (f, bnds, e, f', _) => let
+            (fn (s, f, bnds, e, f', _) => let
               val ctx = List.foldr
                 (fn ((x, c), ctx) => extendType ctx x c)
                 ctx bnds
@@ -73,7 +76,7 @@ functor ClosureConversionFun(
                   (fn (x, c) => (x, translateCon c)) bnds)
               val bnds = argbnds @ [(env, freeTys)]
 
-              val result = (f, bnds, constructBind freeI)
+              val result = (s, f, bnds, constructBind freeI)
             in (
               result,
               f',
@@ -85,7 +88,7 @@ functor ClosureConversionFun(
             lams
 
           val rebindFixpoints = fn e => ParList.foldr
-            (fn (((f, _, _), f', ty), e) =>
+            (fn (((s, f, _, _), f', ty), e) =>
               (* assume f' : (not (ui @ env)) *)
               Exp_let (
                 Value_pack (
@@ -109,8 +112,8 @@ functor ClosureConversionFun(
             lams
 
           val (lams, tys) = ListPair.unzip (ParList.map
-            (fn ((_, bnds, e), f', ty) =>
-              ((f', bnds, rebindFixpoints e), ty))
+            (fn ((s, _, bnds, e), f', ty) =>
+              ((s, f', bnds, rebindFixpoints e), (s, ty)))
             lams)
 
           val tau' = Type_exists (
@@ -143,7 +146,10 @@ functor ClosureConversionFun(
           val (v', t, u) = translateValue ctx v
 
           val tinot = case weakHeadNormalize ctx t of
-            Type_productfix tys => List.nth (tys, i)
+            Type_productfix tys =>
+              (case List.find (fn (s, _) => Symbols.eq (s, i)) tys of
+                 NONE => raise TypeError
+               | SOME (_, ty) => ty)
           | _ => raise TypeError
           val ti = case tinot of Type_not ti => ti | _ => raise TypeError
 

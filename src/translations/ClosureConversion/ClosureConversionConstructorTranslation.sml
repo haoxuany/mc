@@ -50,13 +50,13 @@ structure ClosureConversionConstructorTranslation = struct
         Type_product [
           Con_var 0, (* environment *)
           Type_productfix (ParList.map
-            (fn c =>
+            (fn (s, c) =>
               case c of
-                Type_not cs => Type_not (
+                Type_not cs => (s, Type_not (
                   (ParList.map (fn c => substInCon 0 nil 1 (translateCon c)) cs)
                   (* this need to be appended to make sure that previous projections work correctly *)
                   @ [Con_var 0]
-                )
+                ))
               | _ => raise TypeError)
             cons)
         ]

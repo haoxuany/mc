@@ -63,12 +63,13 @@ functor CpsConversionFun(
 
     | S.Term_fixlam lams => let
         val ctx = List.foldl
-          (fn ((f, x, c, e, c'), ctx) => extendType ctx f (S.Type_arrow (c, c')))
+          (fn ((s, f, x, c, e, c'), ctx) =>
+            extendType ctx f (S.Type_arrow (c, c')))
           ctx
           lams
 
         val fixlam = ParList.map
-          (fn (f, x, t, e, t') => let
+          (fn (s, f, x, t, e, t') => let
             val u = translateCon t
             val k' = new () (* : not u' *)
             val kexn' = new ()
@@ -79,12 +80,12 @@ functor CpsConversionFun(
 
             val tau = S.Type_arrow (t, t')
             val tau' = T.Type_not ytau
-          in (f, (ListPair.zip (y, ytau)), e', tau, tau') end)
+          in (s, f, (ListPair.zip (y, ytau)), e', tau, tau') end)
           lams
 
         val (result, tau, tau') = List.foldr
-          (fn ((f, bnds, e, tau, tau'), (lam, taus, tau's)) =>
-            ((f, bnds, e) :: lam, tau :: taus, tau' :: tau's))
+          (fn ((s, f, bnds, e, tau, tau'), (lam, taus, tau's)) =>
+            ((s, f, bnds, e) :: lam, (s, tau) :: taus, (s, tau') :: tau's))
           (nil, nil, nil)
           fixlam
 
@@ -108,7 +109,10 @@ functor CpsConversionFun(
           e'
         )
         val tau = case weakHeadNormalize ctx t of
-          S.Type_productfix c => List.nth (c, i)
+          S.Type_productfix c =>
+            (case List.find (fn c => Symbols.eq (#1 c, i)) c of
+               NONE => raise TypeError
+             | SOME (_, t) => t)
         | _ => raise TypeError
         val tau' = translateCon tau
       in (result, tau, tau') end

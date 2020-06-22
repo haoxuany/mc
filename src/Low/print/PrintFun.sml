@@ -7,12 +7,14 @@ functor PrintFun(
 
   open HeadPrinter
 
+  val name = Symbols.name
+
   local
   fun sv value =
     case value of
       Value_var i => raw (vp i)
     | Value_pick (v, i) =>
-        head "pick" [sv v, int i]
+        head "pick" [sv v, raw (name i)]
     | Value_tuple vals =>
         head "*" (ParList.map sv vals)
     | Value_inj (cases, i, v) =>
@@ -33,8 +35,8 @@ functor PrintFun(
   and sb block =
     case block of
       Block_fixlam lams =>
-        head "fix" (ParList.map (fn (f, xs, e) =>
-          head "fn" [raw (vp f),
+        head "fix" (ParList.map (fn (s, f, xs, e) =>
+          head "fn" [raw (name s), raw (vp f),
             list (List.concat
               (ParList.map (fn x => [raw (vp x)]) xs)),
             se e])

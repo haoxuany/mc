@@ -6,7 +6,7 @@ signature ABT = sig
 
   datatype value =
     Value_var of var
-  | Value_pick of value * int
+  | Value_pick of value * Symbols.t
   | Value_tuple of value list
   | Value_inj of int (* type cases *) * int * value
 
@@ -18,7 +18,7 @@ signature ABT = sig
   | Exp_exit of int
 
   and block =
-    Block_fixlam of (var * var list * exp) list
+    Block_fixlam of (Symbols.t * var * var list * exp) list
   | Block_lam of var list * exp
 
   and program =

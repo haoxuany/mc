@@ -1,5 +1,6 @@
 
 structure FOmegaS = struct
+  structure Symbols = Symbols
   structure Abt = AbtFun(
     structure Variable = Variable
   )

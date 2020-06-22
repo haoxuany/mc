@@ -44,21 +44,24 @@ functor TypeCheckFun(
       Value_var v => lookupType ctx v
     | Value_fixlam lams => let
         val (ctx, tys) = List.foldr
-          (fn ((f, bnds, _), (ctx, tys)) => let
+          (fn ((s, f, bnds, _), (ctx, tys)) => let
             val ty = Type_not (ParList.map (#2) bnds)
             val () = kindCheck ctx ty Kind_type
-          in (extendType ctx f ty, ty :: tys) end)
+          in (extendType ctx f ty, (s, ty) :: tys) end)
           (ctx, nil)
           lams
         val _ = ParList.map
-          (fn (_, bnds, e) => typeExpCheck
+          (fn (_, _, bnds, e) => typeExpCheck
             (ParList.foldr (fn ((x, c), ctx) => extendType ctx x c) ctx bnds)
             e)
           lams
       in Type_productfix tys end
     | Value_pick (v, i) =>
         (case weakHeadNormalize ctx (typeValueSynth ctx v) of
-           Type_productfix cons => List.nth (cons, i)
+           Type_productfix tys =>
+             (case List.find (fn (s, _) => Symbols.eq (s, i)) tys of
+                NONE => raise TypeError
+              | SOME (_, ty) => ty)
         | _ => raise TypeError)
     | Value_lam (bnds, e) => let
         val (ctx, tys) = List.foldr

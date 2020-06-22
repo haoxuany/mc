@@ -16,7 +16,7 @@ functor AbtFun(
   and con =
     (* types *)
     Type_not of con list
-  | Type_productfix of con list
+  | Type_productfix of (Symbols.t * con) list
   | Type_exists of kind * con
   | Type_product of con list
   | Type_sum of con list
@@ -34,8 +34,8 @@ functor AbtFun(
 
   and value =
     Value_var of var
-  | Value_fixlam of (var * (var * con) list * exp) list
-  | Value_pick of value * int
+  | Value_fixlam of (Symbols.t * var * (var * con) list * exp) list
+  | Value_pick of value * Symbols.t
   | Value_lam of (var * con) list * exp
   | Value_pack of con * value * con
   | Value_tuple of value list

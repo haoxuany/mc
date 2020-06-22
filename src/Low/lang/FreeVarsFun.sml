@@ -46,7 +46,7 @@ functor FreeVarsFun(
     case b of
       Block_fixlam lams => let
         val (free, fs) = ParList.foldr
-          (fn ((f, xs, e), (free, fs)) =>
+          (fn ((_, f, xs, e), (free, fs)) =>
             (free ++ (difference
               (freeVarsExp e)
               (ParList.foldr (fn (x, bnds) => insert bnds x) empty xs)),

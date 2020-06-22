@@ -1,5 +1,7 @@
 
 signature FOMEGAS = sig
+  (* Symbol name cache *)
+  structure Symbols : SYMBOL
   (* Abstract Binding Tree of System F omega with Singleton Kinds *)
   structure Abt : ABT
   (* Representation of contexts (using debruijn indicies at the kind and con binding level) *)

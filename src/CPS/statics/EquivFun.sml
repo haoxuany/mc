@@ -131,7 +131,7 @@ functor EquivFun(
        (ParList.map (fn c => kindCheck ctx c Kind_type) cs;
        Kind_singleton allc)
    | Type_productfix tys =>
-       (ParList.map (fn c => kindCheck ctx c Kind_type) tys;
+       (ParList.map (fn (_, c) => kindCheck ctx c Kind_type) tys;
        Kind_singleton allc)
    | Type_exists (k, c) =>
        (kindValid ctx k; kindCheck (extendKind ctx k) c Kind_type;
@@ -283,10 +283,10 @@ functor EquivFun(
           (ListPair.zip (cs, cs'));
         Kind_type)
     | (Type_productfix tys, Type_productfix tys') =>
-        (* TODO: a parallel version of listpair would be nice *)
-        (ListPair.appEq
-        (fn (ty1, ty2) => conEquiv ctx ty1 ty2 Kind_type)
-        (tys, tys');
+        (ParList.map (fn ((sym, ty), (sym', ty')) =>
+          if Symbols.eq (sym, sym') then conEquiv ctx ty ty' Kind_type
+          else raise TypeError)
+          (ListPair.zip (tys, tys'));
         Kind_type)
     | (Type_exists (k1, c1), Type_exists (k2, c2)) =>
         (kindEquiv ctx k1 k2; conEquiv (extendKind ctx k1) c1 c2 Kind_type;

@@ -7,6 +7,8 @@ functor PrintFun(
 
   open HeadPrinter
 
+  val name = Symbols.name
+
   local
   fun sk kind =
     case kind of
@@ -19,7 +21,8 @@ functor PrintFun(
   and sc con =
    case con of
      Type_arrow (a, b) => head "->" [sc a, sc b]
-   | Type_productfix cons => head "*" (ParList.map sc cons)
+   | Type_productfix tys => head "*" (List.concat
+       (ParList.map (fn (s, c) => [raw (name s), sc c]) tys))
    | Type_forall (k, c) => head "forall" [sk k, sc c]
    | Type_exists (k, c) => head "exists" [sk k, sc c]
    | Type_product cons => head "*" (ParList.map sc cons)
@@ -41,9 +44,10 @@ functor PrintFun(
         head "let" [st t, raw (vp x), st t']
     | Term_fixlam lams =>
         head "fixlam"
-          (ParList.map (fn (f, x, c, t, c') =>
-          head "fn" [raw (vp f), raw (vp x), sc c, st t, sc c']) lams)
-    | Term_pick (t, i) => head "pick" [st t, int i]
+          (ParList.map (fn (s, f, x, c, t, c') =>
+          head "fn" [raw (name s), raw (vp f), raw (vp x), sc c, st t, sc c'])
+          lams)
+    | Term_pick (t, i) => head "pick" [st t, raw (name i)]
     | Term_app (t, t') => head "app" [st t, st t']
     | Term_polylam (k, t) => head "tfn" [sk k, st t]
     | Term_polyapp (t, c) => head "tapp" [st t, sc c]

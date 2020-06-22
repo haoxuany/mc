@@ -45,15 +45,15 @@ functor HoistingFun(
 
     | S.Value_fixlam lams => let
         val ctx = List.foldr
-          (fn ((f, bnds, _), ctx) =>
+          (fn ((_, f, bnds, _), ctx) =>
             extendType ctx f (S.Type_not (ParList.map #2 bnds)))
           ctx lams
 
         val (bs, lams) = ListPair.unzip ( ParList.map
-          (fn (f, bnds, e) => let
+          (fn (s, f, bnds, e) => let
             val (b, e) = translateExp (extendTypes ctx bnds) e
           in (b,
-            (f, ParList.map (fn (x, c) => (x, translateCon c)) bnds, e))
+            (s, f, ParList.map (fn (x, c) => (x, translateCon c)) bnds, e))
           end)
           lams
         )

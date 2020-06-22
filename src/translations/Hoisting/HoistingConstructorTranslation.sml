@@ -26,7 +26,8 @@ structure HoistingConstructorTranslation = struct
     | S.Con_unit => T.Con_unit
 
     | S.Type_not c => T.Type_not (ParList.map translateCon c)
-    | S.Type_productfix cs => T.Type_productfix (ParList.map translateCon cs)
+    | S.Type_productfix cs => T.Type_productfix
+        (ParList.map (fn (s, c) => (s, translateCon c)) cs)
     | S.Type_exists (k, c) => T.Type_exists (translateKind k, translateCon c)
     | S.Type_product tys => T.Type_product (ParList.map translateCon tys)
     | S.Type_sum tys => T.Type_sum (ParList.map translateCon tys)

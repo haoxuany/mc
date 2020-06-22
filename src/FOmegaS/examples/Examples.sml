@@ -6,6 +6,7 @@ structure Examples = struct
     open Print
 
     val newvar = Variable.new
+    val fresh = Symbols.fresh
     val $ = fn (a, b) => a b
     val print = TextIO.print
 
@@ -34,11 +35,12 @@ structure Examples = struct
   infixr 4 $
 
   val example_id = let
+    val fs = fresh "f"
     val f = newvar ()
     val x = newvar ()
   in
     Term_fixlam [
-      (f, x, Type_exn,
+      (fs, f, x, Type_exn,
       Term_var x, Type_exn)
     ]
   end
@@ -47,6 +49,7 @@ structure Examples = struct
     example_id
 
   val example_poly = let
+    val fs = fresh "f"
     val x = newvar ()
     val y = newvar ()
     val f = newvar ()
@@ -55,7 +58,7 @@ structure Examples = struct
       Term_polylam (
         Kind_type,
         Term_fixlam
-          [(f, x, Con_var 0,
+          [(fs, f, x, Con_var 0,
           Term_var x, Con_var 0)]),
     y,
     Term_polyapp (Term_var y, Type_exn))
@@ -70,19 +73,21 @@ structure Examples = struct
   val ff = Term_inj (bool, 1, un)
 
   val example_flip = let
+    val fs = fresh "f"
     val f = newvar ()
     val y = newvar ()
     val a = newvar ()
     val b = newvar ()
   in
     Term_fixlam
-      [(f, y, bool,
+      [(fs, f, y, bool,
       Term_case (Term_var y, [(a, ff), (b, tt)]), bool)]
   end
   val () = printExample
     "Boolean flip function"
     example_flip
 
+  val fstrue = fresh "f"
   val example_istrue = let
     val f = newvar ()
     val y = newvar ()
@@ -90,7 +95,7 @@ structure Examples = struct
     val b = newvar ()
   in
     Term_fixlam
-      [(f, y, bool,
+      [(fstrue, f, y, bool,
       Term_case (Term_var y, [(a, tt), (b, ff)]), bool)]
   end
   val () = printExample
@@ -104,7 +109,7 @@ structure Examples = struct
       Type_exists (Kind_type,
         Type_product [
           Con_var 0,
-          Type_productfix [Type_arrow (Con_var 0, bool)]
+          Type_productfix [(fstrue, Type_arrow (Con_var 0, bool))]
         ])
     )
   val () = printExample
@@ -117,7 +122,7 @@ structure Examples = struct
     Term_unpack (example_istruepack,
       x,
       Term_app
-        (Term_pick (Term_proj (Term_var x, 1), 0),
+        (Term_pick (Term_proj (Term_var x, 1), fstrue),
         Term_proj (Term_var x, 0)))
   end
   val () = printExample
@@ -125,6 +130,7 @@ structure Examples = struct
     example_istrueunpack
 
   val example_fixpoint = let
+    val fs = fresh "f"
     val f = newvar ()
     val y = newvar ()
     val a = newvar ()
@@ -133,11 +139,11 @@ structure Examples = struct
   in
     Term_let (
     Term_fixlam
-      [(f, y, bool,
+      [(fs, f, y, bool,
         Term_case (Term_var y,
           [(a, tt), (b, Term_app (Term_var f, tt))]), bool)],
     temp,
-    Term_app (Term_pick (Term_var temp, 0), ff)
+    Term_app (Term_pick (Term_var temp, fs), ff)
     )
   end
   val () = printExample

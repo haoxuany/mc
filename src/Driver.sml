@@ -13,46 +13,50 @@ structure Driver = struct
    open F
   in
     val newvar = Variable.new
+    val fresh = Symbols.fresh
 
     val example_unit = Term_tuple []
 
     val example_id = let
+      val fs = fresh "f"
       val f = newvar ()
       val x = newvar ()
     in
       Term_fixlam [
-        (f, x, Type_exn,
+        (fs, f, x, Type_exn,
         Term_var x, Type_exn)
       ]
     end
 
     val example_unitapp = let
+      val fs = fresh "f"
       val f = newvar ()
       val x = newvar ()
     in
       Term_app (
         Term_pick (
           Term_fixlam [
-            (f, x, Type_product nil,
+            (fs, f, x, Type_product nil,
             Term_var x, Type_product nil)
           ],
-          0
+          fs
         ),
         Term_tuple nil
       )
     end
 
     val example_divergefix = let
+      val fs = fresh "f"
       val f = newvar ()
       val x = newvar ()
     in
       Term_app (
         Term_pick (
           Term_fixlam [
-            (f, x, Type_product nil,
+            (fs, f, x, Type_product nil,
             Term_app (Term_var f, Term_var x), Type_product nil)
           ],
-          0
+          fs
         ),
         Term_tuple nil
       )
@@ -63,6 +67,7 @@ structure Driver = struct
     val tt = Term_inj (bool, 0, un)
     val ff = Term_inj (bool, 1, un)
 
+    val fstrue = fresh "f"
     val example_istrue = let
       val f = newvar ()
       val y = newvar ()
@@ -70,7 +75,7 @@ structure Driver = struct
       val b = newvar ()
     in
       Term_fixlam
-        [(f, y, bool,
+        [(fstrue, f, y, bool,
         Term_case (Term_var y, [(a, tt), (b, ff)]), bool)]
     end
 
@@ -81,7 +86,7 @@ structure Driver = struct
         Type_exists (Kind_type,
           Type_product [
             Con_var 0,
-            Type_productfix [Type_arrow (Con_var 0, bool)]
+            Type_productfix [(fstrue, Type_arrow (Con_var 0, bool))]
           ])
       )
 
@@ -91,11 +96,12 @@ structure Driver = struct
       Term_unpack (example_istruepack,
         x,
         Term_app
-          (Term_pick (Term_proj (Term_var x, 1), 0),
+          (Term_pick (Term_proj (Term_var x, 1), fstrue),
           Term_proj (Term_var x, 0)))
     end
 
     val example_fixpoint = let
+      val fs = fresh "f"
       val f = newvar ()
       val y = newvar ()
       val a = newvar ()
@@ -104,11 +110,11 @@ structure Driver = struct
     in
       Term_let (
       Term_fixlam
-        [(f, y, bool,
+        [(fs, f, y, bool,
           Term_case (Term_var y,
             [(a, tt), (b, Term_app (Term_var f, tt))]), bool)],
       temp,
-      Term_app (Term_pick (Term_var temp, 0), ff)
+      Term_app (Term_pick (Term_var temp, fs), ff)
       )
     end
   end

@@ -34,7 +34,8 @@ functor SubstFun(
     val con =
       case c of
         Type_arrow (c, c') => Type_arrow (substCon c, substCon c')
-      | Type_productfix tys => Type_productfix $ ParList.map substCon tys
+      | Type_productfix tys => Type_productfix
+          (ParList.map (fn (sym, ty) => (sym, substCon ty)) tys)
       | Type_forall (k, c') =>
           (* c' is under a binder *)
           Type_forall (substKind k, substConB c')
@@ -103,7 +104,7 @@ functor SubstFun(
           Term_let (substTerm t, v, substTerm t')
       | Term_fixlam lams =>
           Term_fixlam (ParList.map
-            (fn (f, x, c, t, c') => (f, x, substCon c, substTerm t, substCon c'))
+            (fn (s, f, x, c, t, c') => (s, f, x, substCon c, substTerm t, substCon c'))
             lams
           )
       | Term_pick (t, i) =>
@@ -163,7 +164,7 @@ functor SubstFun(
         in Term_let (substTerm dict t, v, substTerm dictA t') end
       | Term_fixlam lams => let
           val (fs, dict) = List.foldr
-          (fn ((f, _, c, _, c'), (fs, dict)) => let
+          (fn ((s, f, _, c, _, c'), (fs, dict)) => let
             val f' = Variable.new ()
             val dict = Dict.insert dict f (Term_var f')
           in (f' :: fs, dict) end)
@@ -171,11 +172,11 @@ functor SubstFun(
           lams
         in
           Term_fixlam (ParList.map
-            (fn ((_, x, c, t, c'), f) => let
+            (fn ((s, _, x, c, t, c'), f) => let
               val y = Variable.new ()
               val dict = Dict.insert dict x (Term_var y)
             in
-              (f, y, substCon c, substTerm dict t, substCon c')
+              (s, f, y, substCon c, substTerm dict t, substCon c')
             end)
             (ListPair.zip (lams, fs))
           )
