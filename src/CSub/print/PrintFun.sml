@@ -49,6 +49,11 @@ functor PrintFun(
          in pargs args end;
          print ")"
        )
+     | CType_struct sym => (
+         print "struct ";
+         print (Symbols.name sym)
+       )
+     | CType_auto => print "auto"
   end
 
   fun printState stream indent state = let
@@ -148,8 +153,7 @@ functor PrintFun(
          print "\""
        )
      | Exp_assign (e, e') => (
-        pIndent ();
-        printExp stream 0 e;
+        printExp stream indent e;
         print " = ";
         printExp stream 0 e'
       )
@@ -174,15 +178,13 @@ functor PrintFun(
         print ")"
       )
     | Exp_index (e, e') => (
-        pIndent ();
-        printExp stream 0 e;
+        printExp stream indent e;
         print "[";
         printExp stream 0 e';
         print "]"
       )
     | Exp_call (e, es) => (
-        pIndent ();
-        printExp stream 0 e;
+        printExp stream indent e;
         print "(";
         let
           fun pargs args =
@@ -196,6 +198,11 @@ functor PrintFun(
               )
         in pargs es end;
         print ")"
+      )
+    | Exp_field (e, s) => (
+        printExp stream indent e;
+        print ".";
+        print (Symbols.name s)
       )
   end
 

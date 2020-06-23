@@ -10,6 +10,8 @@ signature ABT = sig
   | CType_void
   | CType_ptr of ctype
   | CType_fn of ctype * ctype list
+  | CType_struct of sym
+  | CType_auto
 
   datatype state =
     State_exp of exp
@@ -27,6 +29,7 @@ signature ABT = sig
   | Exp_addr of exp
   | Exp_index of exp * exp
   | Exp_call of exp * exp list
+  | Exp_field of exp * sym
 
   and decl =
     Decl_fn of ctype * sym * (ctype * sym) list * state list
