@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 
+void f_1(size_t*, size_t*, size_t*, size_t*);
 void fn_0(size_t* arg_0, size_t* arg_1, size_t* arg_2, size_t* arg_3) {
   size_t* letbound_0;
   letbound_0 = arg_3;
@@ -25,7 +26,6 @@ void fn_1(size_t* arg_4, size_t* arg_5) {
   projected_6 = letbound_1[0];
   ((void (*)(size_t*, size_t*, size_t*, size_t*))projected_5)(arg_4, projected_2, projected_3, projected_6);
 }
-void f_1(size_t*, size_t*, size_t*, size_t*);
 void f_1(size_t* arg_6, size_t* arg_7, size_t* arg_8, size_t* arg_9) {
   size_t* tuple_0;
   tuple_0 = ((size_t*)malloc(16));
@@ -43,7 +43,7 @@ void f_1(size_t* arg_6, size_t* arg_7, size_t* arg_8, size_t* arg_9) {
   projected_8 = letbound_3[0];
   ((void (*)(size_t*, size_t*))projected_7)(arg_6, projected_8);
 }
-void fn_3(size_t* arg_10, size_t* arg_11) {
+void fn_2(size_t* arg_10, size_t* arg_11) {
   size_t* projected_9;
   projected_9 = arg_11[0];
   size_t* letbound_4;
@@ -58,7 +58,7 @@ void fn_3(size_t* arg_10, size_t* arg_11) {
   tuple_2[1] = fn_0;
   ((void (*)(size_t*, size_t*))projected_10)(tuple_2, projected_11);
 }
-void fn_4(size_t* arg_12, size_t* arg_13) {
+void fn_3(size_t* arg_12, size_t* arg_13) {
   size_t* projected_12;
   projected_12 = arg_13[0];
   size_t* projected_13;
@@ -84,10 +84,10 @@ void fn_4(size_t* arg_12, size_t* arg_13) {
   tuple_5 = ((size_t*)malloc(0));
   ((void (*)(size_t*, size_t*))projected_14)(tuple_5, projected_15);
 }
-void fn_5(size_t* arg_14, size_t* arg_15) {
+void fn_4(size_t* arg_14, size_t* arg_15) {
   exit(1);
 }
-void fn_6(size_t* arg_16, size_t* arg_17) {
+void fn_5(size_t* arg_16, size_t* arg_17) {
   exit(0);
 }
 void main() {
@@ -96,7 +96,7 @@ void main() {
   size_t* tuple_7;
   tuple_7 = ((size_t*)malloc(0));
   tuple_6[0] = tuple_7;
-  tuple_6[1] = fn_6;
+  tuple_6[1] = fn_5;
   size_t* letbound_7;
   letbound_7 = tuple_6;
   size_t* tuple_8;
@@ -104,7 +104,7 @@ void main() {
   size_t* tuple_9;
   tuple_9 = ((size_t*)malloc(0));
   tuple_8[0] = tuple_9;
-  tuple_8[1] = fn_5;
+  tuple_8[1] = fn_4;
   size_t* letbound_8;
   letbound_8 = tuple_8;
   size_t* tuple_10;
@@ -114,7 +114,7 @@ void main() {
   tuple_11[0] = letbound_7;
   tuple_11[1] = letbound_8;
   tuple_10[0] = tuple_11;
-  tuple_10[1] = fn_4;
+  tuple_10[1] = fn_3;
   size_t* letbound_9;
   letbound_9 = tuple_10;
   size_t* tuple_12;
@@ -123,7 +123,7 @@ void main() {
   tuple_13 = ((size_t*)malloc(8));
   tuple_13[0] = letbound_9;
   tuple_12[0] = tuple_13;
-  tuple_12[1] = fn_3;
+  tuple_12[1] = fn_2;
   size_t* letbound_10;
   letbound_10 = tuple_12;
   size_t* letbound_11;
@@ -137,6 +137,6 @@ void main() {
   size_t* tuple_15;
   tuple_15 = ((size_t*)malloc(0));
   tuple_14[0] = tuple_15;
-  tuple_14[1] = fn_2;
+  tuple_14[1] = NULL;
   ((void (*)(size_t*, size_t*))projected_16)(tuple_14, projected_17);
 }

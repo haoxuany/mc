@@ -18,6 +18,7 @@ functor CodegenFun(
   exception TypeError
 
   val cword = T.CType_sym (Symbols.raw "size_t")
+  val null = Symbols.raw "NULL"
   fun cmalloc i =
     T.Exp_cast (
       T.Exp_call (
@@ -202,7 +203,7 @@ functor CodegenFun(
 
   in result end
 
-  fun translateBlock vmap sym block = let
+  fun translateBlock vmap block = let
     val result = case block of
       S.Block_fixlam lams => let
         val decls = ParList.map
@@ -230,21 +231,22 @@ functor CodegenFun(
               e
           ) end)
           lams
-      in decls @ lams end
+      in (null, decls, lams) end
 
     | S.Block_lam (bnds, e) => let
+        val sym = Symbols.fresh "fn"
         val bnds = ParList.map (fn x => (x, Symbols.fresh "arg")) bnds
         val vmap = List.foldr
           (fn ((x, sym), vmap) => insert vmap x sym)
           vmap bnds
 
         val e = translateExp vmap e
-      in [T.Decl_fn (
+      in (sym, nil, [T.Decl_fn (
             T.CType_void,
             sym,
             ParList.map (fn (_, sym) => (T.CType_ptr cword, sym)) bnds,
             e
-        )] end
+        )]) end
   in result end
 
   and translateProgram program = let
@@ -257,20 +259,21 @@ functor CodegenFun(
 
         fun trans vmap bnds =
           case bnds of
-            nil => [[
+            nil => (nil, [[
               T.Decl_fn (
                 T.CType_void, Symbols.raw "main",
                 nil,
                 translateExp vmap e
               )
-            ]]
+            ]])
          | (x, b) :: rest => let
-             val f = Symbols.fresh "fn"
-             val decls = translateBlock vmap f b
-             val vmap = insert vmap x f
-           in decls :: (trans vmap rest) end
+             val (s, decls, defns) = translateBlock vmap b
+             val vmap = insert vmap x s
+             val (decls', defns') = trans vmap rest
+           in (decls :: decls', defns :: defns') end
 
-        val decls = List.concat (trans VarMap.empty bnds)
+        val (decls, defns) = trans VarMap.empty bnds
+        val decls = List.concat (decls @ defns)
 
       in T.CFile {
             macros = macros,
