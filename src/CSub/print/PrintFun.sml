@@ -59,11 +59,18 @@ functor PrintFun(
          printExp stream indent e;
          print ";"
        )
-     | State_decl (ty, s) => (
+     | State_decl (ty, s, e) => (
          pIndent ();
          printCType stream ty;
          print " ";
          print (Symbols.name s);
+         (case e of
+            NONE => ()
+          | SOME e => (
+              print " = ";
+              printExp stream 0 e
+            )
+         );
          print ";"
        )
      | State_return e => (
@@ -117,7 +124,8 @@ functor PrintFun(
               print "default:\n";
               pstates (indent + 2) s
             )
-         )
+         );
+         print "}"
        end
   end
 
@@ -262,7 +270,7 @@ functor PrintFun(
           | [one] => printDecl stream one
           | h :: rest => (
               printDecl stream h;
-              print "\n";
+              print "\n\n";
               pdecls rest
             )
         in pdecls decls end;

@@ -2,6 +2,8 @@
 functor CodegenFun(
   structure DebugTranslation : DEBUGTRANSLATION
 ) = struct
+  open CodegenConstructors
+
   structure SLang = Low
   structure TLang = CSub
   structure S = SLang.Abt
@@ -17,17 +19,6 @@ functor CodegenFun(
 
   exception TypeError
 
-  val cword = T.CType_sym (Symbols.raw "size_t")
-  val null = Symbols.raw "NULL"
-  fun cmalloc i =
-    T.Exp_cast (
-      T.Exp_call (
-        T.Exp_sym (Symbols.raw "malloc"),
-        [T.Exp_int (i * 8)]
-      ),
-      T.CType_ptr cword
-    )
-
   fun translateValue vmap value = let
     val result = case value of
       S.Value_var x => (nil,
@@ -40,13 +31,7 @@ functor CodegenFun(
     | S.Value_tuple vs => let
         val sym = Symbols.fresh "tuple"
         val temp = T.Exp_sym sym
-        val decl = T.State_decl (T.CType_ptr cword, sym)
-        val alloc = T.State_exp (
-          T.Exp_assign (
-            temp,
-            cmalloc (List.length vs)
-          )
-        )
+        val decl = declmalloc sym (ptr cword) (List.length vs)
 
         fun writeEach vs i =
           case vs of
@@ -64,19 +49,12 @@ functor CodegenFun(
                 )
               )
             in s @ (write :: rest) end
-      in (decl :: alloc :: (writeEach vs 0), sym) end
+      in (decl :: (writeEach vs 0), sym) end
 
     | S.Value_inj (cases, i, v) => let
         val sym = Symbols.fresh "inj"
         val temp = T.Exp_sym sym
-
-        val decl = T.State_decl (T.CType_ptr cword, sym)
-        val alloc = T.State_exp (
-          T.Exp_assign (
-            temp,
-            cmalloc 2
-          )
-        )
+        val decl = declmalloc sym (ptr cword) 2
 
         val writeHead = T.State_exp (
           T.Exp_assign (
@@ -98,7 +76,7 @@ functor CodegenFun(
             T.Exp_sym e
           )
         )
-      in (s @ (decl :: alloc :: writeHead :: writeBody :: nil), sym) end
+      in (s @ (decl :: writeHead :: writeBody :: nil), sym) end
 
   in result end
 
@@ -127,27 +105,23 @@ functor CodegenFun(
         val sym = Symbols.fresh "projected"
         val temp = T.Exp_sym sym
 
-        val decl = T.State_decl (T.CType_ptr cword, sym)
-
         val (sv, vsym) = translateValue vmap v
-        val write = T.State_exp (
-          T.Exp_assign (
-            temp,
-            T.Exp_index (
-              T.Exp_sym vsym,
-              T.Exp_int i
-            )
-          )
+
+        val decl = T.State_decl (ptr cword, sym,
+          SOME (T.Exp_index (
+            T.Exp_sym vsym,
+            T.Exp_int i
+          ))
         )
 
         val rest = translateExp (insert vmap x sym) e
-      in (sv @ (decl :: write :: rest)) end
+      in (sv @ (decl :: rest)) end
 
     | S.Exp_case (v, cases) => let
         val sym = Symbols.fresh "cased"
         val temp = T.Exp_sym sym
 
-        val decl = T.State_decl (T.CType_ptr cword, sym)
+        val decl = T.State_decl (cword, sym, NONE)
 
         val (sv, vsym) = translateValue vmap v
 
@@ -178,24 +152,18 @@ functor CodegenFun(
             constructCases cases 0,
             NONE
           )
-      in sv @ [switch] end
+      in sv @ [decl, switch] end
 
     | S.Exp_let (v, x, e) => let
         val sym = Symbols.fresh "letbound"
         val temp = T.Exp_sym sym
 
-        val decl = T.State_decl (T.CType_ptr cword, sym)
-
         val (sv, vsym) = translateValue vmap v
-        val write = T.State_exp (
-          T.Exp_assign (
-            temp,
-            T.Exp_sym vsym
-          )
-        )
+
+        val decl = T.State_decl (ptr cword, sym, SOME (T.Exp_sym vsym))
 
         val rest = translateExp (insert vmap x sym) e
-      in (sv @ (decl :: write :: rest)) end
+      in (sv @ (decl :: rest)) end
 
     | S.Exp_exit i => [T.State_exp (
         T.Exp_call (T.Exp_sym (Symbols.raw "exit"), [T.Exp_int i])
@@ -208,8 +176,7 @@ functor CodegenFun(
       S.Block_fixlam lams => let
         val decls = ParList.map
           (fn (s, _, args, _) =>
-            T.Decl_fnty (T.CType_void, s,
-              ParList.map (fn _ => T.CType_ptr cword) args))
+            T.Decl_fnty (cvoid, s, ParList.map (fn _ => ptr cword) args))
           lams
 
         val vmap = List.foldl
@@ -225,13 +192,13 @@ functor CodegenFun(
 
             val e = translateExp vmap e
           in T.Decl_fn (
-              T.CType_void,
+              cvoid,
               s,
-              ParList.map (fn (_, sym) => (T.CType_ptr cword, sym)) bnds,
+              ParList.map (fn (_, sym) => (ptr cword, sym)) bnds,
               e
           ) end)
           lams
-      in (null, decls, lams) end
+      in (nullsym, decls, lams) end
 
     | S.Block_lam (bnds, e) => let
         val sym = Symbols.fresh "fn"
@@ -242,9 +209,9 @@ functor CodegenFun(
 
         val e = translateExp vmap e
       in (sym, nil, [T.Decl_fn (
-            T.CType_void,
+            cvoid,
             sym,
-            ParList.map (fn (_, sym) => (T.CType_ptr cword, sym)) bnds,
+            ParList.map (fn (_, sym) => (ptr cword, sym)) bnds,
             e
         )]) end
   in result end
@@ -261,7 +228,7 @@ functor CodegenFun(
           case bnds of
             nil => (nil, [[
               T.Decl_fn (
-                T.CType_void, Symbols.raw "main",
+                cvoid, Symbols.raw "main",
                 nil,
                 translateExp vmap e
               )

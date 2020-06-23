@@ -121,7 +121,7 @@ structure Driver = struct
     end
   end
 
-  val source = example_unitapp
+  val source = example_istrueunpack
 
   local
     open CpsConversion

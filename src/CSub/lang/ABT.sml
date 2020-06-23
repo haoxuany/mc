@@ -13,7 +13,7 @@ signature ABT = sig
 
   datatype state =
     State_exp of exp
-  | State_decl of ctype * sym
+  | State_decl of ctype * sym * exp option
   | State_return of exp option
   | State_switch of exp * (exp * state list) list * (state list option)
 

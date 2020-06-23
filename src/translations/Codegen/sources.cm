@@ -10,5 +10,7 @@ is
   DEBUGTRANSLATION.sml
   DebugTranslation.sml
 
+  CodegenConstructors.sml
+
   CodegenFun.sml
   CodegenDebug.sml

@@ -22,14 +22,9 @@ structure Examples = struct
         [ (cint, raw "argc"),
           (cstring , raw "argv")
         ],
-        [ State_decl (cint, i),
-          State_decl (cstring, s),
-          State_exp (
-            Exp_assign (
-              Exp_sym i,
-              Exp_int 10
-            )
-          ),
+        [ State_decl (cint, i,
+            SOME (Exp_int 10)),
+          State_decl (cstring, s, NONE),
           State_exp (
             Exp_assign (
               Exp_sym s,
