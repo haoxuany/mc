@@ -16,4 +16,6 @@ signature CPS = sig
   structure Run : RUN
   (* Printing *)
   structure Print : PRINT
+  (* Program optimization *)
+  structure Optimize : OPTIMIZE
 end

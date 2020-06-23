@@ -31,4 +31,9 @@ structure Cps = struct
   structure Print = PrintFun(
     structure Abt = Abt
   )
+  structure Optimize = OptimizeFun(
+    structure Abt = Abt
+    structure FreeVars = FreeVars
+    structure Subst = Subst
+  )
 end

@@ -59,4 +59,59 @@ functor FreeVarsFun(
         (freeVarsValue v) ++ ((freeVarsExp e) // x)
     | Exp_exit _ => empty
   end
+
+  fun freeVarsCountValue v x =
+    case v of
+      Value_var v => if Variable.eq (v, x) then 1 else 0
+    | Value_fixlam lams =>
+        if List.exists (fn (_, f, _, _) => Variable.eq (f, x)) lams then 0
+        else List.foldr (op +) 0
+          (ParList.map
+            (fn (_, _, bnds, e) =>
+              if List.exists (fn (y, _) => Variable.eq (x, y)) bnds then 0
+              else freeVarsCountExp e x) lams)
+    | Value_pick (v, _) => freeVarsCountValue v x
+    | Value_lam (bnds, e) =>
+        if List.exists (fn (y, _) => Variable.eq (x, y)) bnds then 0
+        else freeVarsCountExp e x
+    | Value_pack (_, v, _) => freeVarsCountValue v x
+    | Value_tuple vs => List.foldr (op +) 0
+        (ParList.map (fn v => freeVarsCountValue v x) vs)
+    | Value_inj (_, _, v) => freeVarsCountValue v x
+    | Value_fold (_, v) => freeVarsCountValue v x
+
+  and freeVarsCountExp e x =
+    case e of
+      Exp_app (v, vs) =>
+        List.foldr (op +)
+        (freeVarsCountValue v x)
+        (ParList.map (fn v => freeVarsCountValue v x) vs)
+
+    | Exp_unpack (v, y, e) => let
+        val v = freeVarsCountValue v x
+      in if Variable.eq (y, x) then v
+         else v + (freeVarsCountExp e x)
+      end
+    | Exp_proj (v, _, y, e) => let
+        val v = freeVarsCountValue v x
+      in if Variable.eq (y, x) then v
+         else v + (freeVarsCountExp e x)
+      end
+    | Exp_case (v, cases) =>
+        List.foldr (op +)
+        (freeVarsCountValue v x)
+        (ParList.map (fn (y, e) =>
+          if Variable.eq (x, y) then 0
+          else freeVarsCountExp e x) cases)
+    | Exp_unfold (v, y, e) => let
+        val v = freeVarsCountValue v x
+      in if Variable.eq (y, x) then v
+         else v + (freeVarsCountExp e x)
+      end
+    | Exp_let (v, y, e) => let
+        val v = freeVarsCountValue v x
+      in if Variable.eq (y, x) then v
+         else v + (freeVarsCountExp e x)
+      end
+    | Exp_exit _ => 0
 end

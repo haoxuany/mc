@@ -130,6 +130,8 @@ functor PrintFun(
               pstates (indent + 2) s
             )
          );
+         print "\n";
+         pIndent ();
          print "}"
        end
   end

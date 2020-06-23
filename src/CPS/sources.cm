@@ -22,6 +22,9 @@ Library
 
   signature PRINT
   functor PrintFun
+
+  signature OPTIMIZE
+  functor OptimizeFun
 is
   ../../cmlib/cmlib.cm
   ../util/sources.cm
@@ -47,3 +50,6 @@ is
 
   print/PRINT.sml
   print/PrintFun.sml
+
+  optimize/OPTIMIZE.sml
+  optimize/OptimizeFun.sml

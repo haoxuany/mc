@@ -121,7 +121,7 @@ structure Driver = struct
     end
   end
 
-  val source = example_istrueunpack
+  val source = example_divergefix
 
   local
     open CpsConversion
@@ -157,6 +157,26 @@ structure Driver = struct
 
   val () = TextIO.print "cps:\n"
   val () = CLang.Print.printExp program
+  val () = TextIO.print "\n\n\n"
+
+  val (program, i) = CLang.Optimize.varRedexRemovalExp program
+  val () = CLang.TypeCheck.typeExpCheck (CLang.Context.new ()) program
+
+  val () = TextIO.print "redex removal:\n"
+  val () = CLang.Print.printExp program
+  val () = TextIO.print "\n"
+  val () = TextIO.print
+    (String.concat ["optimizations done: ", Int.toString i])
+  val () = TextIO.print "\n\n\n"
+
+  val (program, i) = CLang.Optimize.varRedexRemovalExp program
+  val () = CLang.TypeCheck.typeExpCheck (CLang.Context.new ()) program
+
+  val () = TextIO.print "redex removal:\n"
+  val () = CLang.Print.printExp program
+  val () = TextIO.print "\n"
+  val () = TextIO.print
+    (String.concat ["optimizations done: ", Int.toString i])
   val () = TextIO.print "\n\n\n"
   end
 

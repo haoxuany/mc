@@ -14,4 +14,7 @@ signature FREEVARS = sig
 
   val freeVarsValue : value -> VarSet.set
   val freeVarsExp : exp -> VarSet.set
+
+  val freeVarsCountValue : value -> var -> int
+  val freeVarsCountExp : exp -> var -> int
 end
