@@ -6,7 +6,9 @@ signature TYPECHECK = sig
   type con
   type term
   type sg
+  type psg
   type module
+  type lmodule
 
   exception TypeError
 
@@ -20,4 +22,8 @@ signature TYPECHECK = sig
   val sgSynth : context -> module -> (con * sg)
   (* ctx |> m <-- sg which returns fst(m), raises TypeError otherwise *)
   val sgCheck : context -> module -> sg -> con
+  (* ctx |> lm --> psg *)
+  val psgSynth : context -> lmodule -> psg
+  (* psg => ctx.sg *)
+  val psgExtract : psg -> (context * sg)
 end

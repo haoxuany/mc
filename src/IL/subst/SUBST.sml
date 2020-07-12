@@ -5,7 +5,9 @@ signature SUBST = sig
   type con
   type term
   type sg
+  type psg
   type module
+  type lmodule
 
   type 'a vardict
   (* Simultaneous substitutions *)
@@ -24,7 +26,11 @@ signature SUBST = sig
 
   val substInSg : int -> con list -> int -> sg -> sg
 
+  val substInPsg : int -> con list -> int -> psg -> psg
+
   (* TODO: this could be generalized to substitute for module vars as
   * well, but is a bit tricky to implement *)
   val substInModule : int -> con list -> int -> module -> module
+
+  val substInLmodule : int -> con list -> int -> lmodule -> lmodule
 end

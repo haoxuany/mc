@@ -6,7 +6,9 @@ signature EQUIV = sig
   type con
   type term
   type sg
+  type psg
   type module
+  type lmodule
 
   (* see Stone's PhD Thesis on what any of this is *)
 
@@ -45,11 +47,17 @@ signature EQUIV = sig
   (* Algorithmic path equivalence: Figure 4.4 *)
   (* ctx |> p <-> p ^ k *)
   val pathEquiv : context -> con -> con -> kind
-  (* The rest of these judgements are from [Crary 2017] Appendix *)
+  (* The rest of these judgements are from [Crary 2020] *)
   (* ctx |> sg : sig *)
   val sgValid : context -> sg -> unit
+  (* ctx |> psg : sig+ *)
+  val psgValid : context -> psg -> unit
   (* ctx |> sg === sg' : sig *)
   val sgEquiv : context -> sg -> sg -> unit
+  (* ctx |> psg === psg' : sig+ *)
+  val psgEquiv : context -> psg -> psg -> unit
   (* ctx |> sg <= sg' : sig *)
   val subsg : context -> sg -> sg -> unit
+  (* ctx |> psg <= sg' : sig *)
+  val subpsg : context -> psg -> psg -> unit
 end

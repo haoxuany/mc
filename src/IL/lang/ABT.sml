@@ -57,6 +57,11 @@ signature ABT = sig
   | Sg_type of con
   | Sg_lam of sg * sg
   | Sg_pair of sg * sg
+  | Sg_circ of psg
+
+  and psg =
+    Psg_shift of sg
+  | Psg_exists of kind * psg
 
   and module =
     Module_var of var
@@ -70,6 +75,12 @@ signature ABT = sig
   | Module_proj1 of module
   | Module_proj2 of module
   | Module_let of term * var * module
+  | Module_circ of lmodule
+
+  and lmodule =
+    Lmodule_ret of module
+  | Lmodule_seal of module * sg
+  | Lmodule_bind of module * var * lmodule
 
   val fstSg : sg -> kind
 end

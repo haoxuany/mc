@@ -9,7 +9,9 @@ functor TypeCheckFun(
   where type con = Abt.con
   where type term = Abt.term
   where type sg = Abt.sg
+  where type psg = Abt.psg
   where type module = Abt.module
+  where type lmodule = Abt.lmodule
 
   structure Subst : SUBST
   where type var = Abt.var
@@ -17,7 +19,9 @@ functor TypeCheckFun(
   where type con = Abt.con
   where type term = Abt.term
   where type sg = Abt.sg
+  where type psg = Abt.psg
   where type module = Abt.module
+  where type lmodule = Abt.lmodule
 
   structure Equiv : EQUIV
   where type context = Context.t
@@ -26,12 +30,16 @@ functor TypeCheckFun(
   where type con = Abt.con
   where type term = Abt.term
   where type sg = Abt.sg
+  where type psg = Abt.psg
   where type module = Abt.module
+  where type lmodule = Abt.lmodule
 ) : TYPECHECK = struct
   open Abt
   open Context
   open Subst
   open Equiv
+
+  exception TODO
 
   (* Bidirectional type checking *)
   (* I can't find a really good paper to link here because most of
@@ -203,9 +211,39 @@ functor TypeCheckFun(
     | Module_let (e, x, m) => let
         val ty = typeSynth ctx e
       in sgSynth (extendType ctx x ty) m end
+    | Module_circ l => (Con_unit, Sg_circ (psgSynth ctx l))
 
   and sgCheck ctx module sg = let
     val (a, sg') = sgSynth ctx module
   in subsg ctx sg' sg; a end
 
+  and psgSynth ctx lmodule =
+    case lmodule of
+      Lmodule_ret m => Psg_shift (#2 (sgSynth ctx m))
+    | Lmodule_seal (m, s) => (
+        sgValid ctx s;
+        sgCheck ctx m s;
+        Psg_shift s
+      )
+    | Lmodule_bind (m, x, l) => let
+        val p1 = case #2 (sgSynth ctx m) of
+          Sg_circ p => p
+        | _ => raise TypeError
+        val (ctx', s) = psgExtract p1
+        val p2 = psgSynth
+          (extendSg (concat ctx ctx') x s) l
+
+        fun construct ctxkinds =
+          case ctxkinds of
+            nil => Psg_exists (fstSg s, p2)
+          | k :: rest => Psg_exists (k, construct rest)
+
+      in construct (List.rev (kinds ctx')) end
+
+  and psgExtract psg = let
+    fun extract ctx psg =
+      case psg of
+        Psg_shift sg => (ctx, sg)
+      | Psg_exists (k, psg) => extract (extendKind ctx k) psg
+  in extract (Context.new ()) psg end
 end

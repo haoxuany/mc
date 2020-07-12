@@ -9,7 +9,9 @@ functor EquivFun(
   where type con = Abt.con
   where type term = Abt.term
   where type sg = Abt.sg
+  where type psg = Abt.psg
   where type module = Abt.module
+  where type lmodule = Abt.lmodule
 
   structure Subst : SUBST
   where type var = Abt.var
@@ -17,7 +19,9 @@ functor EquivFun(
   where type con = Abt.con
   where type term = Abt.term
   where type sg = Abt.sg
+  where type psg = Abt.psg
   where type module = Abt.module
+  where type lmodule = Abt.lmodule
 ) : EQUIV = struct
   open Abt
   open Context
@@ -72,6 +76,7 @@ functor EquivFun(
             (* needs to be listed since it's still a dependent signature *)
             (singletonSg (Con_proj2 c) (substInSg 0 [Con_proj1 c] 0 s'))
         )
+    | Sg_circ _ => s
 
   (* Kind validity: Figure 4.2 *)
   (* ctx |> k *)
@@ -347,6 +352,15 @@ functor EquivFun(
     | Sg_pair (s, s') =>
         (sgValid ctx s;
         sgValid (extendKind ctx (fstSg s)) s')
+    | Sg_circ p => psgValid ctx p
+
+  and psgValid ctx psg =
+    case psg of
+      Psg_shift sg => sgValid ctx sg
+    | Psg_exists (k, psg) => (
+        kindValid ctx k;
+        psgValid (extendKind ctx k) psg
+      )
 
   fun sgEquiv ctx sg sg' =
     case (sg, sg') of
@@ -359,6 +373,16 @@ functor EquivFun(
     | (Sg_pair (s1, s1'), Sg_pair (s2, s2')) =>
         (sgEquiv ctx s1 s2;
         sgEquiv (extendKind ctx (fstSg s1)) s1' s2')
+    | (Sg_circ p, Sg_circ p') => psgEquiv ctx p p'
+    | _ => raise TypeError
+
+  and psgEquiv ctx psg psg' =
+    case (psg, psg') of
+      (Psg_shift s, Psg_shift s') => sgEquiv ctx s s'
+    | (Psg_exists (k, p), Psg_exists (k', p')) => (
+        kindEquiv ctx k k';
+        psgEquiv (extendKind ctx k) p p'
+      )
     | _ => raise TypeError
 
   fun subsg ctx sg sg' =
@@ -371,15 +395,17 @@ functor EquivFun(
     | (Sg_type t, Sg_type t') => conEquiv ctx t t' Kind_type
     | (Sg_lam (s1, s1'), Sg_lam (s2, s2')) =>
         (subsg ctx s2 s1;
-        subsg (extendKind ctx (fstSg s2)) s1' s2';
-        (* This check usually is already done by subsumption *)
-        sgValid (extendKind ctx (fstSg s1)) s1'
-        )
+        subsg (extendKind ctx (fstSg s2)) s1' s2')
     | (Sg_pair (s1, s1'), Sg_pair (s2, s2')) =>
         (subsg ctx s1 s2;
-        subsg (extendKind ctx (fstSg s1)) s1' s2';
-        (* This check usually is already done by subsumption *)
-        sgValid (extendKind ctx (fstSg s2)) s2'
-        )
+        subsg (extendKind ctx (fstSg s1)) s1' s2')
+    | (Sg_circ p, Sg_circ p') => subpsg ctx p p'
+    | _ => raise TypeError
+
+  and subpsg ctx psg psg' =
+    case (psg, psg') of
+      (Psg_shift s, Psg_shift s') => subsg ctx s s'
+    | (Psg_exists (k, psg), psg') =>
+        subpsg (extendKind ctx k) psg (substInPsg 0 nil 1 psg')
     | _ => raise TypeError
 end

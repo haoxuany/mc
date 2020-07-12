@@ -224,6 +224,7 @@ functor SubstFun(
     val substKind = substInKind shifts cons n lifts
     val substSg = substInSg shifts cons n lifts
     val substSgB = substInSg (shifts + 1) cons n lifts
+    val substPsg = substInPsg shifts cons n lifts
 
     val sg = case s of
       Sg_unit => s
@@ -231,7 +232,18 @@ functor SubstFun(
     | Sg_type c => Sg_type (substCon c)
     | Sg_lam (s, s') => Sg_lam (substSg s, substSgB s')
     | Sg_pair (s, s') => Sg_pair (substSg s, substSgB s')
+    | Sg_circ p => Sg_circ (substPsg p)
   in sg end
+
+  and substInPsg shifts cons n lifts p = let
+    val substKind = substInKind shifts cons n lifts
+    val substSg = substInSg shifts cons n lifts
+    val substPsgB = substInPsg (shifts + 1) cons n lifts
+
+    val psg = case p of
+      Psg_shift s => Psg_shift (substSg s)
+    | Psg_exists (k, p) => Psg_exists (substKind k, substPsgB p)
+  in psg end
 
   and substConInModule shifts cons n lifts m = let
     val substCon = substInCon shifts cons n lifts
@@ -240,6 +252,7 @@ functor SubstFun(
     val substSg = substInSg shifts cons n lifts
     val substModule = substConInModule shifts cons n lifts
     val substModuleB = substConInModule shifts cons n lifts
+    val substLmodule = substConInLmodule shifts cons n lifts
 
     val m = case m of
       Module_var _ => m
@@ -260,7 +273,21 @@ functor SubstFun(
         Module_proj2 (substModule m)
     | Module_let (e, x, m) =>
         Module_let (substTerm e, x, substModule m)
+    | Module_circ l =>
+        Module_circ (substLmodule l)
   in m end
+
+  and substConInLmodule shifts cons n lifts l = let
+    val substModule = substConInModule shifts cons n lifts
+    val substSg = substInSg shifts cons n lifts
+    val substLmoduleB = substConInLmodule shifts cons n lifts
+
+    val l = case l of
+      Lmodule_ret m => Lmodule_ret (substModule m)
+    | Lmodule_seal (m, s) => Lmodule_seal (substModule m, substSg s)
+    | Lmodule_bind (m, x, l) =>
+        Lmodule_bind (substModule m, x, substLmoduleB l)
+  in l end
 
   val substInCon = fn shifts => fn cons => fn lifts =>
     substInCon shifts cons (List.length cons) lifts
@@ -272,6 +299,10 @@ functor SubstFun(
     else substConTermInTerm shifts cons (List.length cons) lifts dict
   val substInSg = fn shifts => fn cons => fn lifts =>
     substInSg shifts cons (List.length cons) lifts
+  val substInPsg = fn shifts => fn cons => fn lifts =>
+    substInPsg shifts cons (List.length cons) lifts
   val substInModule = fn shifts => fn cons => fn lifts =>
     substConInModule shifts cons (List.length cons) lifts
+  val substInLmodule = fn shifts => fn cons => fn lifts =>
+    substConInLmodule shifts cons (List.length cons) lifts
 end

@@ -5,7 +5,9 @@ signature CONTEXT = sig
   type con
   type term
   type sg
+  type psg
   type module
+  type lmodule
 
   type t
 
@@ -16,5 +18,8 @@ signature CONTEXT = sig
 
   val lookupKind : t -> int -> kind
   val lookupType : t -> var -> con
-  val lookupSg : t -> var -> (con * sg) (* alpha * signature *)
+  val lookupSg : t -> var -> (con * sg) (* fst * signature *)
+
+  val concat : t -> t -> t
+  val kinds : t -> kind list (* reversed *)
 end

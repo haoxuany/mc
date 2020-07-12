@@ -7,19 +7,23 @@ functor ContextFun(
   where type con = Abt.con
   where type term = Abt.term
   where type sg = Abt.sg
+  where type psg = Abt.psg
   where type module = Abt.module
+  where type lmodule = Abt.lmodule
 ) :> CONTEXT
 where type var = Abt.var
 where type kind = Abt.kind
 where type con = Abt.con
 where type term = Abt.term
 where type sg = Abt.sg
+where type psg = Abt.psg
 where type module = Abt.module
+where type lmodule = Abt.lmodule
 = struct
   open Abt
   open Subst
 
-  structure Dict = SplayRDict(
+  structure Dict = SplayDict(
     structure Key = Abt.Variable
   )
 
@@ -92,5 +96,32 @@ where type module = Abt.module
     substInSg 0 nil (conOfKindN - index) sg
   ) end
 
+  fun concat (ctx : t) (ctx' : t) : t = let
+    val
+    { conOfKindN = n1
+    , conOfKind = ks1
+    , termOfType = ts1
+    , moduleOfSg = ms1
+    } = ctx
+    val
+    { conOfKindN = n2
+    , conOfKind = ks2
+    , termOfType = ts2
+    , moduleOfSg = ms2
+    } = ctx'
 
+    val latter = fn (_, _, a) => a
+  in
+    { conOfKindN = n1 + n2
+    , conOfKind = ks2 @ ks1 (* because everything is in reverse here *)
+    , termOfType = Dict.union ts1
+        (Dict.map (fn {ty, index} => {ty = ty, index = index + n1}) ts2)
+        latter
+    , moduleOfSg = Dict.union ms1
+        (Dict.map (fn {sg, index} => {sg = sg, index = index + n1}) ms2)
+        latter
+    }
+  end
+
+  fun kinds (ctx : t) = #conOfKind ctx
 end
