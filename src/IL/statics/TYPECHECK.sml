@@ -15,11 +15,9 @@ signature TYPECHECK = sig
   val typeSynth : context -> term -> con
   (* ctx |> t <-- c *)
   val typeCheck : context -> term -> con -> unit
-  (* See [Crary 2017] and [Crary 2019] for the formulation of these *)
-  (* ctx |>p m --> sg if returns (SOME fst(m), sg) *)
-  (* ctx |>I m --> sg if returns (NONE, sg) *)
-  val sgSynth : context -> module -> (con option * sg)
-  (* ctx |>p m <-- sg if returns SOME (fst(m)) *)
-  (* ctx |>I m <-- sg if returns NONE *)
-  val sgCheck : context -> module -> sg -> con option
+  (* See [Crary 2020, Figure 8] *)
+  (* ctx |> m --> sg which returns (fst(m), sg) *)
+  val sgSynth : context -> module -> (con * sg)
+  (* ctx |> m <-- sg which returns fst(m), raises TypeError otherwise *)
+  val sgCheck : context -> module -> sg -> con
 end

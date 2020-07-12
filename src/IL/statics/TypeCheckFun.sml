@@ -149,63 +149,60 @@ functor TypeCheckFun(
   and typeCheck ctx term con =
     (conEquiv ctx con (typeSynth ctx term) Kind_type) : unit
 
-  (* This follows [Crary 2017] Appendix pretty closely, but refactored
-  * such that is returns (SOME (fst m), sg) if the module m is pure (aka m :P sg),
-  * and (NONE, sg) if module m is impure (aka m :I sg) *)
+  (* This follows [Crary 2020] Appendix pretty closely, but refactored
+  * such that it returns (fst m, sg). *)
   and sgSynth ctx module =
     case module of
       Module_var x => let
         val (c, sg) = lookupSg ctx x
-        (* This is following [Crary 2019] where we selfify/singleton
+        (* This is following [Crary 2020] where we selfify/singleton
         * the signature *)
-      in (SOME c, singletonSg c sg) end
-    | Module_unit => (SOME Con_unit, Sg_unit)
-    | Module_con c => (SOME c, Sg_kind (kindSynth ctx c))
-    | Module_term t => (SOME Con_unit, Sg_type (typeSynth ctx t))
+      in (c, singletonSg c sg) end
+    | Module_unit => (Con_unit, Sg_unit)
+    | Module_con c => (c, Sg_kind (kindSynth ctx c))
+    | Module_term t => (Con_unit, Sg_type (typeSynth ctx t))
     | Module_lam (x, s, m) =>
         (sgValid ctx s;
-        (* generative functors are always pure, with empty projectible
-        * constructors due to generativity *)
-        (SOME Con_unit, Sg_lam (s, #2 (sgSynth (extendSg ctx x s) m))))
+        let
+          val (fstc, sg) = sgSynth (extendSg ctx x s) m
+        in
+          (Con_lam (fstSg s, fstc) , Sg_lam (s, sg))
+        end)
     | Module_app (m, m') => let
-        val (s, s') = case sgSynth ctx m of
-          (_, Sg_lam lam) => lam
+        val (c1, (s, s')) = case sgSynth ctx m of
+          (c1, Sg_lam lam) => (c1, lam)
         | _ => raise TypeError
-        val a = case sgCheck ctx m' s of
-          SOME a => a
-        (* generative functor application must have pure argument *)
-        | NONE => raise TypeError
-      in (NONE, substInSg 0 [a] 0 s') end
+        val c2 = sgCheck ctx m' s
+      in (Con_app (c1, c2), substInSg 0 [c2] 0 s') end
     | Module_pair (m, x, m') => let
         val (a, sg) = sgSynth ctx m
         val (a', sg') = sgSynth (extendSg ctx x sg) m'
       in
-        (case (a, a') of
-          (* because Con_pair is not dependent, we need to subst a into a' *)
-          (SOME a, SOME a') => SOME (Con_pair (a, substInCon 0 [a] 0 a'))
-        | _ => NONE,
+        (* because Con_pair is not dependent, we need to subst a into a' *)
+        (Con_pair (a, substInCon 0 [a] 0 a'),
         Sg_pair (sg, sg'))
       end
     | Module_tuple (m, m') => let
         val (a, sg) = sgSynth ctx m
         val (a', sg') = sgSynth ctx m'
       in
-        (case (a, a') of
-           (SOME a, SOME a') => SOME (Con_pair (a, a'))
-        | _ => NONE,
+        (Con_pair (a, a'),
         (* Sg_pair is dependent, so we need to lift sg' out *)
         Sg_pair (sg, substInSg 0 nil 1 sg'))
       end
     | Module_proj1 m => let
-        val (a, sg, sg') = case sgSynth ctx m of
-          (SOME a, Sg_pair (sg, sg')) => (a, sg, sg')
+        val (a, sg) = case sgSynth ctx m of
+          (a, Sg_pair (sg, _)) => (a, sg)
         | _ => raise TypeError
-      in (SOME (Con_proj1 a), sg) end
+      in (Con_proj1 a, sg) end
     | Module_proj2 m => let
-        val (a, sg, sg') = case sgSynth ctx m of
-          (SOME a, Sg_pair (sg, sg')) => (a, sg, sg')
+        val (a, sg) = case sgSynth ctx m of
+          (a, Sg_pair (_, sg')) => (a, substInSg 0 [Con_proj1 a] 0 sg')
         | _ => raise TypeError
-      in (SOME (Con_proj2 a), substInSg 0 [Con_proj1 a] 0 sg') end
+      in (Con_proj2 a, sg) end
+    | Module_let (e, x, m) => let
+        val ty = typeSynth ctx e
+      in sgSynth (extendType ctx x ty) m end
 
   and sgCheck ctx module sg = let
     val (a, sg') = sgSynth ctx module

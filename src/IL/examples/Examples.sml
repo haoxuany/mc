@@ -33,14 +33,12 @@ structure Examples = struct
       val () = print "Example: "
       val () = print s
       val () = print "\n============\n"
-      val (a, s) = TypeCheck.sgSynth (Context.new ()) m
-      val () = case a of
-        NONE => print "Impure Module\n"
-      | SOME c => (
-          print "Pure Module with fst: ";
-          printCon c;
-          print "\n"
-        )
+      val (c, s) = TypeCheck.sgSynth (Context.new ()) m
+      val () = (
+        print "Module with fst: ";
+        printCon c;
+        print "\n"
+      )
       val () = print "with signature: "
       val () = printSg s
       val () = print "\n"

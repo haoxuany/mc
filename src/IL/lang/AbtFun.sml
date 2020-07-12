@@ -65,19 +65,20 @@ functor AbtFun(
   | Module_unit
   | Module_con of con
   | Module_term of term
-  | Module_lam of var * sg * module (* generative *)
-  | Module_app of module * module (* generative *)
+  | Module_lam of var * sg * module (* applicative *)
+  | Module_app of module * module (* applicative *)
   | Module_pair of module * var * module
   | Module_tuple of module * module
   | Module_proj1 of module
   | Module_proj2 of module
+  | Module_let of term * var * module
 
-  (* [Crary 2019, Figure 2] *)
+  (* [Crary 2020, Figure 2] *)
   fun fstSg sg =
     case sg of
       Sg_unit => Kind_unit
     | Sg_kind k => k
     | Sg_type _ => Kind_unit
-    | Sg_lam _ => Kind_unit
+    | Sg_lam (s, s') => Kind_pi (fstSg s, fstSg s')
     | Sg_pair (s, s') => Kind_sigma (fstSg s, fstSg s')
 end

@@ -258,6 +258,8 @@ functor SubstFun(
         Module_proj1 (substModule m)
     | Module_proj2 m =>
         Module_proj2 (substModule m)
+    | Module_let (e, x, m) =>
+        Module_let (substTerm e, x, substModule m)
   in m end
 
   val substInCon = fn shifts => fn cons => fn lifts =>

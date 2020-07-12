@@ -54,13 +54,17 @@ functor EquivFun(
         )
     | Kind_unit => k
 
-  (* Derived forms for higher singletons for signatures: [Crary 2019, Figure 3] *)
+  (* Derived forms for higher singletons for signatures: [Crary 2020, Figure 3] *)
   fun singletonSg c s =
     case s of
       Sg_unit => s
     | Sg_kind k => Sg_kind (singleton c k)
     | Sg_type t => s
-    | Sg_lam _ => s
+    | Sg_lam (s, s') =>
+        Sg_lam (
+          s,
+          singletonSg (Con_app (substInCon 0 nil 1 c, Con_var 0)) s'
+        )
     | Sg_pair (s, s') =>
         Sg_pair (
           singletonSg (Con_proj1 c) s,

@@ -63,12 +63,13 @@ signature ABT = sig
   | Module_unit
   | Module_con of con
   | Module_term of term
-  | Module_lam of var * sg * module (* generative *)
-  | Module_app of module * module (* generative *)
+  | Module_lam of var * sg * module (* applicative *)
+  | Module_app of module * module (* applicative *)
   | Module_pair of module * var * module
   | Module_tuple of module * module
   | Module_proj1 of module
   | Module_proj2 of module
+  | Module_let of term * var * module
 
   val fstSg : sg -> kind
 end

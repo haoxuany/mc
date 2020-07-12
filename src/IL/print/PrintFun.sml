@@ -89,6 +89,8 @@ functor PrintFun(
         head "mdpi1" [sm m]
     | Module_proj2 m =>
         head "mdpi1" [sm m]
+    | Module_let (t, x, m) =>
+        head "mdlet" [st t, raw (vp x), sm m]
   in
 
   val serializeKind = sk
